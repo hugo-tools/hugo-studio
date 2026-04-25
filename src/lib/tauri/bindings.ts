@@ -8,6 +8,30 @@
 
 
 export const commands = {
+async assetDelete(siteId: SiteId, assetId: string) : Promise<Result<null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("asset_delete", { siteId, assetId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async assetImport(siteId: SiteId, source: string, targetContext: AssetContext) : Promise<Result<AssetRef, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("asset_import", { siteId, source, targetContext }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async assetList(siteId: SiteId, contentId: string | null) : Promise<Result<AssetRef[], AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("asset_list", { siteId, contentId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async configGet(siteId: SiteId) : Promise<Result<LoadedConfig, AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("config_get", { siteId }) };
@@ -178,6 +202,46 @@ async workspaceSetActive(id: SiteId) : Promise<Result<Site, AppError>> {
  * TypeScript side can switch on `kind` without parsing free-form strings.
  */
 export type AppError = { kind: "not_a_hugo_site"; message: string } | { kind: "site_not_found"; message: string } | { kind: "not_a_directory"; message: string } | { kind: "path_traversal"; message: string } | { kind: "io"; message: string } | { kind: "serde"; message: string } | { kind: "internal"; message: string } | { kind: "hugo_binary"; message: string } | { kind: "preview_already_running"; message: string } | { kind: "no_preview_running" }
+export type AssetContext = 
+/**
+ * Co-locate the file inside the bundle directory of `content_id`.
+ * `content_id` is the absolute path to the bundle's index file
+ * (matches `ContentSummary.path` for a Branch / Leaf bundle).
+ */
+{ kind: "bundle"; contentId: string } | 
+/**
+ * `<site>/static/<subpath>`. Empty subpath = static root.
+ */
+{ kind: "static"; subpath: string } | 
+/**
+ * `<site>/assets/<subpath>`. Empty subpath = assets root.
+ */
+{ kind: "assets"; subpath: string }
+/**
+ * Coarse classification used by the UI to pick an icon and decide
+ * whether to show an inline thumbnail.
+ */
+export type AssetKind = "image" | "script" | "style" | "document" | "other"
+export type AssetRef = { 
+/**
+ * Stable id: site-relative path with forward slashes.
+ */
+id: string; name: string; 
+/**
+ * Absolute path on disk.
+ */
+path: string; 
+/**
+ * Relative path from the editor's reference point — for a Bundle
+ * import that's just the file name (suitable for `![]()` markdown);
+ * for Static / Assets it's the path the file would have when Hugo
+ * renders the page (`/<subpath>/<name>` for static).
+ */
+relativeLink: string; kind: AssetKind; size: number; 
+/**
+ * Friendly label for the UI ("posts/hello/", "static/img/", …).
+ */
+contextLabel: string }
 export type ConfigFormat = "toml" | "yaml" | "json"
 /**
  * One config source on disk plus its current parsed contents.

@@ -1,18 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
+import type { UnlistenFn } from "@tauri-apps/api/event";
 import { Save, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
   describeError,
   tauri,
+  type AssetContext,
+  type AssetRef,
   type ContentEditPayload,
   type JsonValue,
   type Site,
 } from "@/lib/tauri";
 import { useWorkspaceStore, type EditorSelection } from "@/store/workspace";
+import { AssetImportDialog } from "@/features/assets/AssetImportDialog";
+import { BundleAssetsPanel } from "@/features/assets/BundleAssetsPanel";
 import { FrontMatterForm } from "./FrontMatterForm";
-import { BodyEditor } from "./BodyEditor";
+import { BodyEditor, type BodyEditorHandle } from "./BodyEditor";
 
 interface Props {
   site: Site;
@@ -28,17 +34,82 @@ export function EditorView({ site, selection }: Props) {
     queryFn: () => tauri.contentGet(site.id, selection.path),
   });
 
-  // Local working copy. We seed it from `doc.data` on first arrival and
-  // whenever the user picks a different file.
   const [fm, setFm] = useState<Record<string, JsonValue>>({});
   const [body, setBody] = useState("");
   const [savedFlash, setSavedFlash] = useState(false);
+  const editorRef = useRef<BodyEditorHandle>(null);
+
+  // Asset import dialog state — opened when the user drops files on the
+  // editor surface. The dropped paths are buffered until the dialog
+  // resolves, then routed through assetImport one by one.
+  const [pendingFiles, setPendingFiles] = useState<string[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!doc.data) return;
     setFm((doc.data.frontMatter as Record<string, JsonValue>) ?? {});
     setBody(doc.data.body);
   }, [doc.data]);
+
+  // Whether the active content is a bundle: only then does "drop into
+  // bundle" make sense. We infer from the file name (the path ends with
+  // index.* or _index.*).
+  const bundleAvailable = useMemo(
+    () => /(?:^|[\\/])(_?index)\.\w+$/i.test(selection.path),
+    [selection.path],
+  );
+  const bundleContentId = bundleAvailable ? selection.path : null;
+  const bundleLabel = bundleAvailable
+    ? selection.id.replace(/\/[^/]+$/, "/") || selection.id
+    : null;
+
+  // Listen for file drops from the OS into the webview. We grab the
+  // paths and pop the import dialog. Note: the listener is global to the
+  // window — that's fine here because EditorView is the only surface
+  // that knows what to do with a dropped file. When EditorView unmounts
+  // (e.g. user closes the editor), the listener is detached.
+  useEffect(() => {
+    let cancelled = false;
+    let unlisten: UnlistenFn | null = null;
+    getCurrentWebview()
+      .onDragDropEvent((event) => {
+        if (event.payload.type !== "drop") return;
+        if (!event.payload.paths.length) return;
+        setPendingFiles(event.payload.paths.slice());
+        setDialogOpen(true);
+      })
+      .then((u) => {
+        if (cancelled) u();
+        else unlisten = u;
+      });
+    return () => {
+      cancelled = true;
+      if (unlisten) unlisten();
+    };
+  }, []);
+
+  const importAssets = useMutation({
+    mutationFn: async (context: AssetContext) => {
+      const out: AssetRef[] = [];
+      for (const source of pendingFiles) {
+        const resolved =
+          context.kind === "bundle" && context.contentId === "__current__"
+            ? { kind: "bundle" as const, contentId: bundleContentId ?? "" }
+            : context;
+        out.push(await tauri.assetImport(site.id, source, resolved));
+      }
+      return out;
+    },
+    onSuccess: (refs) => {
+      setDialogOpen(false);
+      setPendingFiles([]);
+      for (const a of refs) editorRef.current?.insertAtCursor(linkFor(a));
+      queryClient.invalidateQueries({
+        queryKey: ["assets", site.id, bundleContentId],
+      });
+    },
+    onError: (e) => alert(describeError(e)),
+  });
 
   const dirty =
     !!doc.data &&
@@ -70,6 +141,11 @@ export function EditorView({ site, selection }: Props) {
       </div>
     );
   }
+
+  const showAssets = bundleAvailable;
+  const bodyCols = showAssets
+    ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_220px]"
+    : "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]";
 
   return (
     <div className="flex h-full flex-col">
@@ -117,7 +193,7 @@ export function EditorView({ site, selection }: Props) {
         </div>
       </header>
 
-      <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className={`grid flex-1 grid-cols-1 overflow-hidden ${bodyCols}`}>
         <section className="overflow-auto border-r p-6">
           <FrontMatterForm
             schema={doc.data.schema}
@@ -130,10 +206,37 @@ export function EditorView({ site, selection }: Props) {
             Body — Markdown
           </div>
           <div className="flex-1 overflow-hidden">
-            <BodyEditor value={body} onChange={setBody} />
+            <BodyEditor ref={editorRef} value={body} onChange={setBody} />
           </div>
         </section>
+        {showAssets && (
+          <BundleAssetsPanel
+            siteId={site.id}
+            contentId={bundleContentId}
+            onInsertLink={(a) => editorRef.current?.insertAtCursor(linkFor(a))}
+          />
+        )}
       </div>
+
+      <AssetImportDialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) setPendingFiles([]);
+        }}
+        files={pendingFiles}
+        bundleAvailable={bundleAvailable}
+        bundleLabel={bundleLabel}
+        onConfirm={(ctx) => importAssets.mutate(ctx)}
+      />
     </div>
   );
+}
+
+function linkFor(asset: AssetRef): string {
+  const altSuggestion = asset.name.replace(/\.[^.]+$/, "");
+  if (asset.kind === "image") {
+    return `![${altSuggestion}](${asset.relativeLink})`;
+  }
+  return `[${altSuggestion}](${asset.relativeLink})`;
 }

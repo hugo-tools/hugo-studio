@@ -6,6 +6,8 @@
 import { commands, type Result } from "./bindings";
 import type {
   AppError,
+  AssetContext,
+  AssetRef,
   ContentEditPayload,
   ContentScanResult,
   DetectionInfo,
@@ -66,6 +68,16 @@ export const tauri = {
     unwrap(commands.previewStart(siteId)),
   previewStop: (): Promise<null> => unwrap(commands.previewStop()),
   previewStatus: (): Promise<PreviewStatus> => unwrap(commands.previewStatus()),
+  assetImport: (
+    siteId: SiteId,
+    source: string,
+    targetContext: AssetContext,
+  ): Promise<AssetRef> =>
+    unwrap(commands.assetImport(siteId, source, targetContext)),
+  assetList: (siteId: SiteId, contentId: string | null): Promise<AssetRef[]> =>
+    unwrap(commands.assetList(siteId, contentId)),
+  assetDelete: (siteId: SiteId, assetId: string): Promise<null> =>
+    unwrap(commands.assetDelete(siteId, assetId)),
 };
 
 export function isAppError(value: unknown): value is AppError {

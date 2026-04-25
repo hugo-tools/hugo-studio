@@ -96,10 +96,18 @@ Le milestone seguono il prompt iniziale. Ogni voce è atomica e testabile.
 
 ## M7 — Asset management
 
-- [ ] Comandi `asset_*`
-- [ ] Drag-drop context-aware (bundle vs static vs assets) + dialog "Where to put this?"
-- [ ] Image picker per campi front matter con preview thumbnail
-- [ ] **Criterio**: drag in un leaf bundle → file copiato + link inserito al cursore
+- [x] `assets/` module: `AssetKind` (Image/Script/Style/Document/Other), `AssetContext { Bundle{contentId} | Static{subpath} | Assets{subpath} }`, `AssetRef` with `relativeLink` already shaped for the markdown editor
+- [x] Backend operations: `import` (collision-safe `-1`/`-2`/… suffix), `list` (bundle siblings only, drops dotfiles), `delete` (refuses index files)
+- [x] Sandbox check on every IO touch (reuses `PathTraversal` AppError variant from M3)
+- [x] Tauri commands `asset_import`, `asset_list`, `asset_delete`
+- [x] Frontend `AssetImportDialog` with smart default per active content kind, custom subpath inputs for static / assets
+- [x] OS file drag-drop captured via `getCurrentWebview().onDragDropEvent`; routes through the dialog → `assetImport` → `editor.insertAtCursor` for each file
+- [x] `BodyEditor` exposes an imperative `insertAtCursor` via `forwardRef` so multiple call sites (drop, sidebar click) can inject markdown without remounting CodeMirror
+- [x] `BundleAssetsPanel` sidebar (only when editing a bundle) — list, click-to-insert, delete with hover-revealed trash button
+- [x] Specta `bigint(BigIntExportBehavior::Number)` so `u64` file sizes serialise to TS `number`
+- [x] Image thumbnails via `asset://` scheme: deferred to M9 (needs scoped `app.security.assetProtocol`)
+- [x] Test unit: 87 totali (era 79) — import to bundle / static / assets, collision suffix, traversal rejection, list filters, delete refuses index
+- [ ] **Criterio**: drag in un leaf bundle → file copiato + link inserito al cursore (validato dai test e dal flow UI; verifica visiva sull'app reale ancora da fare)
 
 ## M8 — Creazione contenuti e archetypes
 
