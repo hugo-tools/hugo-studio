@@ -281,15 +281,65 @@ function PreviewPlaceholder({
     );
   }
   return (
-    <div className="flex h-full items-center justify-center px-6">
-      <div className="max-w-md text-center">
-        <p className="text-sm font-medium">Preview is idle</p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Click <span className="font-medium">Start</span> to launch
-          <code className="mx-1 font-mono">hugo server</code>
-          on this site. Hugo must be installed on PATH (or pointed to via
-          <code className="ml-1 font-mono">HUGO_STUDIO_HUGO_PATH</code>).
-        </p>
+    <div className="flex h-full items-center justify-center px-6 py-8">
+      <div className="max-w-md space-y-4 text-sm">
+        <div>
+          <p className="font-medium">Preview is idle</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Click <span className="font-medium">Start</span> to launch
+            <code className="mx-1 font-mono">hugo server</code>
+            against this site. Hugo extended must be reachable via your
+            <code className="ml-1 font-mono">PATH</code> (or pointed to via
+            <code className="ml-1 font-mono">HUGO_STUDIO_HUGO_PATH</code>).
+          </p>
+        </div>
+        <details className="rounded-md border bg-muted/20 p-3 text-xs">
+          <summary className="cursor-pointer font-medium">
+            Don't have Hugo installed?
+          </summary>
+          <ul className="mt-2 space-y-1 font-mono">
+            <li>
+              <span className="text-muted-foreground">macOS:</span>{" "}
+              <code>brew install hugo</code>
+            </li>
+            <li>
+              <span className="text-muted-foreground">Windows:</span>{" "}
+              <code>scoop install hugo-extended</code>
+            </li>
+            <li>
+              <span className="text-muted-foreground">
+                Linux (Debian/Ubuntu):
+              </span>{" "}
+              download the
+              <code className="mx-1">_extended_*.deb</code>
+              from the{" "}
+              <a
+                href="https://github.com/gohugoio/hugo/releases"
+                target="_blank"
+                rel="noopener"
+                className="underline"
+              >
+                releases page
+              </a>
+            </li>
+            <li>
+              <span className="text-muted-foreground">Anywhere else:</span> see{" "}
+              <a
+                href="https://gohugo.io/installation/"
+                target="_blank"
+                rel="noopener"
+                className="underline"
+              >
+                gohugo.io/installation
+              </a>
+            </li>
+          </ul>
+          <p className="mt-2 text-muted-foreground">
+            Make sure to install the <strong>extended</strong> build — Hugo
+            Studio uses features (SCSS, image processing) that aren't in the
+            regular distribution.
+          </p>
+        </details>
       </div>
     </div>
   );

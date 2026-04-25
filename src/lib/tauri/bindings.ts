@@ -72,6 +72,62 @@ async contentSave(siteId: SiteId, path: string, frontMatter: JsonValue, body: st
     else return { status: "error", error: e  as any };
 }
 },
+async gitClone(opts: CloneOptions) : Promise<Result<CloneResult, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("git_clone", { opts }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async gitCommit(siteId: SiteId, message: string) : Promise<Result<CommitResult, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("git_commit", { siteId, message }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async gitPull(siteId: SiteId) : Promise<Result<GitStatus, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("git_pull", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async gitPush(siteId: SiteId) : Promise<Result<GitStatus, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("git_push", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async gitStage(siteId: SiteId, paths: string[]) : Promise<Result<GitStatus, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("git_stage", { siteId, paths }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async gitStatus(siteId: SiteId) : Promise<Result<GitStatus, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("git_status", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async gitUnstage(siteId: SiteId, paths: string[]) : Promise<Result<GitStatus, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("git_unstage", { siteId, paths }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async healthCheck() : Promise<HealthStatus> {
     return await TAURI_INVOKE("health_check");
 },
@@ -242,6 +298,17 @@ relativeLink: string; kind: AssetKind; size: number;
  * Friendly label for the UI ("posts/hello/", "static/img/", …).
  */
 contextLabel: string }
+export type CloneOptions = { url: string; 
+/**
+ * Absolute path of the destination directory. Must NOT exist yet.
+ */
+dest: string; 
+/**
+ * Optional branch to check out after clone.
+ */
+branch: string | null }
+export type CloneResult = { dest: string; head: string | null }
+export type CommitResult = { oid: string; summary: string }
 export type ConfigFormat = "toml" | "yaml" | "json"
 /**
  * One config source on disk plus its current parsed contents.
@@ -308,6 +375,32 @@ export type FieldType = "string" | "text" | "number" | "boolean" | "date" | "dat
 "json"
 export type FrontMatterFormat = "toml" | "yaml" | "json"
 export type FrontMatterSchema = { fields: FieldDef[]; unknownFieldsPolicy: UnknownFieldsPolicy }
+export type GitChange = { path: string; status: GitChangeStatus; 
+/**
+ * True when the change is in the index (staged), false when in the
+ * working tree only.
+ */
+staged: boolean }
+export type GitChangeStatus = "new" | "modified" | "deleted" | "renamed" | "untracked" | "conflicted" | "ignored" | "typeChange"
+export type GitStatus = { 
+/**
+ * `None` when the repository has no commits yet or is in a detached
+ * HEAD state.
+ */
+branch: string | null; 
+/**
+ * Resolved upstream branch name like `origin/main`, or `None` when
+ * the current branch has no upstream configured.
+ */
+upstream: string | null; ahead: number; behind: number; changes: GitChange[]; remotes: string[]; 
+/**
+ * True when the directory is a git repo at all.
+ */
+isRepo: boolean; 
+/**
+ * Convenience flag for the UI: anything to commit / push.
+ */
+clean: boolean }
 export type HealthStatus = { status: string; version: string }
 /**
  * Which kind of config layout was found in the site root.

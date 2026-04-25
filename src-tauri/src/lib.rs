@@ -8,6 +8,7 @@ pub mod config;
 pub mod content;
 pub mod domain;
 pub mod error;
+pub mod git;
 pub mod hugo;
 pub mod persistence;
 pub mod preview;
@@ -33,6 +34,13 @@ pub fn make_specta_builder() -> Builder<tauri::Wry> {
         commands::content::content_get,
         commands::content::content_list,
         commands::content::content_save,
+        commands::git::git_clone,
+        commands::git::git_commit,
+        commands::git::git_pull,
+        commands::git::git_push,
+        commands::git::git_stage,
+        commands::git::git_status,
+        commands::git::git_unstage,
         commands::health_check::health_check,
         commands::preview::preview_start,
         commands::preview::preview_status,

@@ -8,9 +8,11 @@ import { describeError, tauri, type Site } from "@/lib/tauri";
 import { useWorkspaceStore } from "@/store/workspace";
 import { ContentTree } from "@/features/content-tree/ContentTree";
 import { EditorView } from "@/features/editor/EditorView";
+import { GitPanel } from "@/features/git/GitPanel";
 import { PreviewPane } from "@/features/preview/PreviewPane";
 import { SiteSettingsPanel } from "@/features/site-settings/SiteSettingsPanel";
 import { ThemeSettingsPanel } from "@/features/theme-settings/ThemeSettingsPanel";
+import { ThemeToggle } from "@/features/theme-mode/ThemeToggle";
 
 const KIND_LABEL: Record<Site["detection"]["kind"], string> = {
   hugoToml: "hugo.toml",
@@ -96,6 +98,7 @@ export function SiteShell({ site }: Props) {
             )}
             Preview
           </Button>
+          <ThemeToggle />
           <span className="rounded-full border px-3 py-1 text-xs text-muted-foreground">
             config: {KIND_LABEL[site.detection.kind]}
           </span>
@@ -119,6 +122,7 @@ export function SiteShell({ site }: Props) {
                 <TabsList>
                   <TabsTrigger value="site">Site</TabsTrigger>
                   <TabsTrigger value="theme">Theme</TabsTrigger>
+                  <TabsTrigger value="git">Git</TabsTrigger>
                 </TabsList>
               </div>
               <TabsContent value="site" className="mt-0 flex-1 overflow-auto">
@@ -126,6 +130,9 @@ export function SiteShell({ site }: Props) {
               </TabsContent>
               <TabsContent value="theme" className="mt-0 flex-1 overflow-auto">
                 <ThemeSettingsPanel site={site} />
+              </TabsContent>
+              <TabsContent value="git" className="mt-0 flex-1 overflow-auto">
+                <GitPanel site={site} />
               </TabsContent>
             </Tabs>
           )}

@@ -5,6 +5,8 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { Save, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   describeError,
   tauri,
@@ -51,9 +53,6 @@ export function EditorView({ site, selection }: Props) {
     setBody(doc.data.body);
   }, [doc.data]);
 
-  // Whether the active content is a bundle: only then does "drop into
-  // bundle" make sense. We infer from the file name (the path ends with
-  // index.* or _index.*).
   const bundleAvailable = useMemo(
     () => /(?:^|[\\/])(_?index)\.\w+$/i.test(selection.path),
     [selection.path],
@@ -63,11 +62,6 @@ export function EditorView({ site, selection }: Props) {
     ? selection.id.replace(/\/[^/]+$/, "/") || selection.id
     : null;
 
-  // Listen for file drops from the OS into the webview. We grab the
-  // paths and pop the import dialog. Note: the listener is global to the
-  // window — that's fine here because EditorView is the only surface
-  // that knows what to do with a dropped file. When EditorView unmounts
-  // (e.g. user closes the editor), the listener is detached.
   useEffect(() => {
     let cancelled = false;
     let unlisten: UnlistenFn | null = null;
@@ -143,72 +137,96 @@ export function EditorView({ site, selection }: Props) {
   }
 
   const showAssets = bundleAvailable;
-  const bodyCols = showAssets
-    ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_220px]"
-    : "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]";
+  const gridCols = showAssets
+    ? "lg:grid-cols-[minmax(0,1fr)_220px]"
+    : "lg:grid-cols-1";
+
+  const titleValue = (fm.title as string | undefined) ?? "";
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between gap-3 border-b px-6 py-3">
-        <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold">
-            {(fm.title as string | undefined) ??
-              selection.title ??
-              selection.id}
-          </h2>
+      <header className="flex flex-col gap-2 border-b px-6 py-3">
+        <div className="flex items-center justify-between gap-3">
           <p
             className="truncate font-mono text-xs text-muted-foreground"
             title={doc.data.path}
           >
             {doc.data.path} · {doc.data.format.toUpperCase()} front-matter
           </p>
+          <div className="flex items-center gap-3">
+            {savedFlash && (
+              <span className="text-xs text-muted-foreground">Saved.</span>
+            )}
+            {save.isError && (
+              <span className="text-xs text-destructive">
+                {describeError(save.error)}
+              </span>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              disabled={!dirty || save.isPending}
+              onClick={() => save.mutate()}
+            >
+              <Save className="size-4" />
+              {save.isPending ? "Saving…" : "Save"}
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => clearSelection(null)}
+              aria-label="Close editor"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          {savedFlash && (
-            <span className="text-xs text-muted-foreground">Saved.</span>
-          )}
-          {save.isError && (
-            <span className="text-xs text-destructive">
-              {describeError(save.error)}
-            </span>
-          )}
-          <Button
-            type="button"
-            size="sm"
-            disabled={!dirty || save.isPending}
-            onClick={() => save.mutate()}
-          >
-            <Save className="size-4" />
-            {save.isPending ? "Saving…" : "Save"}
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            onClick={() => clearSelection(null)}
-            aria-label="Close editor"
-          >
-            <X className="size-4" />
-          </Button>
-        </div>
+        <Input
+          type="text"
+          value={titleValue}
+          onChange={(e) => {
+            const next = e.target.value;
+            setFm((prev) => {
+              const copy = { ...prev };
+              if (next === "") delete copy.title;
+              else copy.title = next;
+              return copy;
+            });
+          }}
+          placeholder="Page title"
+          className="h-9 text-base font-semibold"
+        />
       </header>
 
-      <div className={`grid flex-1 grid-cols-1 overflow-hidden ${bodyCols}`}>
-        <section className="overflow-auto border-r p-6">
-          <FrontMatterForm
-            schema={doc.data.schema}
-            values={fm}
-            onChange={setFm}
-          />
-        </section>
-        <section className="flex h-full flex-col overflow-hidden">
-          <div className="border-b px-6 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Body — Markdown
+      <div className={`grid flex-1 grid-cols-1 overflow-hidden ${gridCols}`}>
+        <Tabs
+          defaultValue="frontmatter"
+          className="flex h-full flex-col overflow-hidden"
+        >
+          <div className="border-b px-6 py-2">
+            <TabsList>
+              <TabsTrigger value="frontmatter">Front matter</TabsTrigger>
+              <TabsTrigger value="body">Body</TabsTrigger>
+            </TabsList>
           </div>
-          <div className="flex-1 overflow-hidden">
+          <TabsContent
+            value="frontmatter"
+            className="mt-0 flex-1 overflow-auto p-6"
+          >
+            <FrontMatterForm
+              schema={doc.data.schema}
+              values={fm}
+              onChange={setFm}
+            />
+          </TabsContent>
+          <TabsContent
+            value="body"
+            className="mt-0 flex h-full flex-1 flex-col overflow-hidden"
+          >
             <BodyEditor ref={editorRef} value={body} onChange={setBody} />
-          </div>
-        </section>
+          </TabsContent>
+        </Tabs>
         {showAssets && (
           <BundleAssetsPanel
             siteId={site.id}

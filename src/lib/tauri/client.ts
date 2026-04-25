@@ -8,9 +8,13 @@ import type {
   AppError,
   AssetContext,
   AssetRef,
+  CloneOptions,
+  CloneResult,
+  CommitResult,
   ContentEditPayload,
   ContentScanResult,
   DetectionInfo,
+  GitStatus,
   JsonValue,
   LoadedConfig,
   PreviewHandle,
@@ -78,6 +82,20 @@ export const tauri = {
     unwrap(commands.assetList(siteId, contentId)),
   assetDelete: (siteId: SiteId, assetId: string): Promise<null> =>
     unwrap(commands.assetDelete(siteId, assetId)),
+  gitStatus: (siteId: SiteId): Promise<GitStatus> =>
+    unwrap(commands.gitStatus(siteId)),
+  gitClone: (opts: CloneOptions): Promise<CloneResult> =>
+    unwrap(commands.gitClone(opts)),
+  gitStage: (siteId: SiteId, paths: string[]): Promise<GitStatus> =>
+    unwrap(commands.gitStage(siteId, paths)),
+  gitUnstage: (siteId: SiteId, paths: string[]): Promise<GitStatus> =>
+    unwrap(commands.gitUnstage(siteId, paths)),
+  gitCommit: (siteId: SiteId, message: string): Promise<CommitResult> =>
+    unwrap(commands.gitCommit(siteId, message)),
+  gitPull: (siteId: SiteId): Promise<GitStatus> =>
+    unwrap(commands.gitPull(siteId)),
+  gitPush: (siteId: SiteId): Promise<GitStatus> =>
+    unwrap(commands.gitPush(siteId)),
 };
 
 export function isAppError(value: unknown): value is AppError {
