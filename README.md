@@ -54,7 +54,7 @@ Vedi [`.github/workflows/release.yml`](./.github/workflows/release.yml) — prod
 
 ### macOS — primo avvio
 
-Le build macOS sono *ad-hoc signed* ma **non notarizzate** (la notarizzazione richiede un Apple Developer ID a pagamento). Quando scarichi il `.dmg` dalla Release, macOS aggiunge il flag `com.apple.quarantine` e al primo lancio mostra:
+Le build macOS sono _ad-hoc signed_ ma **non notarizzate** (la notarizzazione richiede un Apple Developer ID a pagamento). Quando scarichi il `.dmg` dalla Release, macOS aggiunge il flag `com.apple.quarantine` e al primo lancio mostra:
 
 > "Hugo Studio" non può essere aperto perché Apple non può verificare l'assenza di software malevolo.
 

@@ -6,10 +6,12 @@
 import { commands, type Result } from "./bindings";
 import type {
   AppError,
+  DetectionInfo,
+  JsonValue,
+  LoadedConfig,
   Site,
   SiteId,
   SiteRef,
-  DetectionInfo,
 } from "./bindings";
 
 async function unwrap<T>(p: Promise<Result<T, AppError>>): Promise<T> {
@@ -36,6 +38,10 @@ export const tauri = {
     unwrap(commands.workspaceSetActive(id)),
   workspaceClearActive: (): Promise<null> =>
     unwrap(commands.workspaceClearActive()),
+  configGet: (siteId: SiteId): Promise<LoadedConfig> =>
+    unwrap(commands.configGet(siteId)),
+  configSave: (siteId: SiteId, merged: JsonValue): Promise<LoadedConfig> =>
+    unwrap(commands.configSave(siteId, merged)),
 };
 
 export function isAppError(value: unknown): value is AppError {

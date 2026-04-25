@@ -2,8 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { tauri, describeError, type Site } from "@/lib/tauri";
+import { describeError, tauri, type Site } from "@/lib/tauri";
 import { useWorkspaceStore } from "@/store/workspace";
+import { SiteSettingsPanel } from "@/features/site-settings/SiteSettingsPanel";
 
 const KIND_LABEL: Record<Site["detection"]["kind"], string> = {
   hugoToml: "hugo.toml",
@@ -62,45 +63,9 @@ export function SiteShell({ site }: Props) {
         </span>
       </header>
 
-      <main className="flex-1 px-6 py-10">
-        <div className="mx-auto max-w-2xl rounded-lg border border-dashed bg-muted/30 px-6 py-10 text-center">
-          <h2 className="text-lg font-medium">Site opened</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            The content tree, front-matter editor and live preview land in
-            milestones M3 – M6. For now, this surface confirms that the site was
-            registered and detected correctly.
-          </p>
-          <dl className="mt-6 grid grid-cols-1 gap-3 text-left text-sm sm:grid-cols-2">
-            <Field label="Site ID" value={site.id} mono />
-            <Field label="Detection" value={KIND_LABEL[site.detection.kind]} />
-            <Field label="Content root" value={site.contentRoot} mono />
-            <Field label="Config path" value={site.detection.configPath} mono />
-          </dl>
-        </div>
+      <main className="flex-1">
+        <SiteSettingsPanel site={site} />
       </main>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <div>
-      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-        {label}
-      </dt>
-      <dd
-        className={mono ? "mt-1 break-all font-mono text-xs" : "mt-1 text-sm"}
-      >
-        {value}
-      </dd>
     </div>
   );
 }

@@ -8,6 +8,22 @@
 
 
 export const commands = {
+async configGet(siteId: SiteId) : Promise<Result<LoadedConfig, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("config_get", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async configSave(siteId: SiteId, merged: JsonValue) : Promise<Result<LoadedConfig, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("config_save", { siteId, merged }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async healthCheck() : Promise<HealthStatus> {
     return await TAURI_INVOKE("health_check");
 },
@@ -98,6 +114,17 @@ async workspaceSetActive(id: SiteId) : Promise<Result<Site, AppError>> {
  * TypeScript side can switch on `kind` without parsing free-form strings.
  */
 export type AppError = { kind: "not_a_hugo_site"; message: string } | { kind: "site_not_found"; message: string } | { kind: "not_a_directory"; message: string } | { kind: "path_traversal"; message: string } | { kind: "io"; message: string } | { kind: "serde"; message: string } | { kind: "internal"; message: string }
+export type ConfigFormat = "toml" | "yaml" | "json"
+/**
+ * One config source on disk plus its current parsed contents.
+ */
+export type ConfigSource = { path: string; format: ConfigFormat; 
+/**
+ * Top-level key under which this file's contents are merged. `null`
+ * means the file's keys live at the merged root (the canonical
+ * `hugo.{toml,yaml,json}` case).
+ */
+mountKey: string | null }
 export type DetectionInfo = { kind: HugoConfigKind; 
 /**
  * Absolute path to the discovered file (single-file kinds) or to the
@@ -111,6 +138,12 @@ export type HealthStatus = { status: string; version: string }
  * Order matches the priority in [`detect`]: hugo.* > config.* > config/_default/.
  */
 export type HugoConfigKind = "hugoToml" | "hugoYaml" | "hugoJson" | "configToml" | "configYaml" | "configJson" | "defaultDirectory"
+export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
+/**
+ * Result of [`load`] — both the canonical merged JSON for the UI to
+ * render, and the per-file mapping needed to write changes back.
+ */
+export type LoadedConfig = { format: ConfigFormat; sources: ConfigSource[]; merged: JsonValue }
 /**
  * Runtime view of an opened site. M1 only fills the structural pieces
  * (id, paths, detection info); config / theme / languages arrive in M2 / M5 / M3.

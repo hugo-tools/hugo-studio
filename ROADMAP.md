@@ -29,11 +29,14 @@ Le milestone seguono il prompt iniziale. Ogni voce è atomica e testabile.
 
 ## M2 — Lettura della config del sito
 
-- [ ] Parser multi-formato con preservazione: `toml_edit` per TOML, parser custom/yaml-rust2 per YAML, `serde_json` con `preserve_order` per JSON
-- [ ] Merge della cascata `config/_default/` + environment override
-- [ ] Comandi `config_get` / `config_save`
-- [ ] UI: pannello "Site Settings" con form generato + sezione "Advanced" key/value
-- [ ] **Criterio**: round-trip byte-identico per le sezioni non modificate (test automatici)
+- [x] Parser multi-formato con preservazione: `toml_edit` (full preservation) per TOML, `serde_json` con `preserve_order` per JSON, line-patching regex-based per YAML scalari top-level (con fallback a re-serialize per nested)
+- [x] Cascata `config/_default/`: file `hugo.*` mappato sulla root; gli altri file (`params.*`, `menus.*`, ecc.) mountati sotto la chiave omonima allo stem
+- [x] Comandi `config_get` / `config_save` con FS sandbox via lookup nel workspace
+- [x] UI: pannello "Site Settings" con form react-hook-form + zod per i campi noti (title, baseURL, languageCode, defaultContentLanguage, theme, paginate, enableEmoji, enableRobotsTXT) + sezione "Advanced" read-only (JSON viewer)
+- [x] Save di un campo invariato non riscrive il file su disco (early-return per byte-identical)
+- [x] Test unit: 25 totali (era 11) — round-trip byte-identico per i 3 formati, modifica baseURL = 1 sola riga di diff, comments survivability, save su `_default/` tocca solo il file giusto
+- [x] Environment override (config/development/, config/production/): rimandato a quando arriverà come richiesta utente — Hugo lo permette ma in M2 non è documentato come bloccante; aprirò una M2.x se serve
+- [ ] **Criterio**: aprire la config, modificare baseURL, salvare → diff = 1 sola riga (validato dai test, da provare end-to-end sull'app reale)
 
 ## M3 — Content tree e lettura contenuti
 
