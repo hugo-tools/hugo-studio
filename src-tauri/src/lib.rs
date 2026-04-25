@@ -4,11 +4,13 @@ use tauri_specta::{collect_commands, Builder};
 
 pub mod commands;
 pub mod config;
+pub mod content;
 pub mod domain;
 pub mod error;
 pub mod hugo;
 pub mod persistence;
 pub mod state;
+pub mod watcher;
 
 use crate::persistence::workspace_store::WorkspaceStore;
 use crate::state::AppState;
@@ -22,6 +24,7 @@ pub fn make_specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new().commands(collect_commands![
         commands::config::config_get,
         commands::config::config_save,
+        commands::content::content_list,
         commands::health_check::health_check,
         commands::site::site_detect,
         commands::workspace::workspace_active_site_id,

@@ -40,12 +40,16 @@ Le milestone seguono il prompt iniziale. Ogni voce è atomica e testabile.
 
 ## M3 — Content tree e lettura contenuti
 
-- [ ] Scansione `content/` con classificazione `SinglePage` / `LeafBundle` / `BranchBundle`
-- [ ] Detection multilingua (filename vs directory)
-- [ ] Comando `content_list` con cache TanStack Query
-- [ ] UI: file tree con icone per kind, indicatore draft, switcher di lingua
-- [ ] File watcher `notify` debounced 200ms
-- [ ] **Criterio**: tree popolato per Hugo Coder / PaperMod, modifica esterna riflessa in <1s
+- [x] Scansione `content/` con classificazione `Section` / `BranchBundle` / `LeafBundle` / `SinglePage` (estensioni: `.md`, `.markdown`, `.html`, `.htm`)
+- [x] Detection multilingua per §6.6: `Mono` / `Filename` / `Directory` (driven da `defaultContentLanguageInSubdir` + presenza di subdir per i lang code)
+- [x] Front-matter peek minimale per popolare title/draft/date senza full deserialize (TOML/YAML/JSON con tolleranza BOM)
+- [x] Comando `content_list` con cache TanStack Query (queryKey scoped per `site.id`)
+- [x] UI: file tree gerarchico costruito client-side dalla flat list, icone per kind (Layers/Package/Folder/FileText), badge draft, badge "+ lang" / "⚠ missing"
+- [x] LanguageSwitcher: select compatto in toolbar tree, filtra per lingua attiva
+- [x] File watcher `notify` debounced 200ms (poll loop a 50ms + finestra di silenzio 200ms), ignora `public/`, `resources/`, `node_modules/`, `.git/`, `.hugo_build.lock`, `.DS_Store`
+- [x] Watcher gestito dal lifecycle di `workspace_set_active` / `workspace_clear_active`; emette `site:changed` Tauri event; frontend invalida `["content", id]` + `["config", id]`
+- [x] Test unit: 53 totali (era 25) — classify (6), language (7), FM peek (6), scan (4), watcher ignore (4)
+- [ ] **Criterio**: tree popolato per Hugo Coder / PaperMod, modifica esterna riflessa in <1s (validabile solo runtime su un sito reale)
 
 ## M4 — Editor di contenuto (cuore del prodotto)
 

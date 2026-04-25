@@ -2,8 +2,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { describeError, tauri, type Site } from "@/lib/tauri";
 import { useWorkspaceStore } from "@/store/workspace";
+import { ContentTree } from "@/features/content-tree/ContentTree";
 import { SiteSettingsPanel } from "@/features/site-settings/SiteSettingsPanel";
 
 const KIND_LABEL: Record<Site["detection"]["kind"], string> = {
@@ -34,8 +36,8 @@ export function SiteShell({ site }: Props) {
   });
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between border-b px-6 py-4">
+    <div className="flex h-screen flex-col">
+      <header className="flex items-center justify-between border-b px-6 py-3">
         <div className="flex items-center gap-3">
           <Button
             size="sm"
@@ -63,9 +65,36 @@ export function SiteShell({ site }: Props) {
         </span>
       </header>
 
-      <main className="flex-1">
-        <SiteSettingsPanel site={site} />
-      </main>
+      <div className="grid flex-1 grid-cols-[280px_1fr] overflow-hidden">
+        <aside className="flex h-full flex-col overflow-hidden border-r bg-muted/20">
+          <ContentTree site={site} />
+        </aside>
+
+        <main className="flex-1 overflow-auto">
+          <Tabs defaultValue="settings" className="h-full">
+            <div className="flex items-center justify-between border-b px-6 py-2">
+              <TabsList>
+                <TabsTrigger value="settings">Site settings</TabsTrigger>
+                <TabsTrigger value="editor">Editor</TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value="settings" className="mt-0">
+              <SiteSettingsPanel site={site} />
+            </TabsContent>
+            <TabsContent value="editor" className="mt-0">
+              <div className="mx-auto max-w-2xl rounded-lg border border-dashed bg-muted/30 px-6 py-10 text-center">
+                <h2 className="text-lg font-medium">
+                  Editor coming in milestone M4
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Selecting a page in the tree will open the front-matter form +
+                  Markdown body editor here.
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
     </div>
   );
 }

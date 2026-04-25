@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use chrono::Utc;
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use crate::domain::ids::SiteId;
 use crate::domain::site::Site;
@@ -9,6 +9,7 @@ use crate::domain::workspace::SiteRef;
 use crate::error::{AppError, AppResult};
 use crate::hugo::detect;
 use crate::state::AppState;
+use crate::watcher;
 
 #[tauri::command]
 #[specta::specta]
@@ -111,7 +112,11 @@ pub fn workspace_rename_site(
 
 #[tauri::command]
 #[specta::specta]
-pub fn workspace_set_active(state: State<'_, AppState>, id: SiteId) -> AppResult<Site> {
+pub fn workspace_set_active(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    id: SiteId,
+) -> AppResult<Site> {
     let site_ref = {
         let mut ws = state.workspace.lock();
         let site_clone = {
@@ -128,7 +133,14 @@ pub fn workspace_set_active(state: State<'_, AppState>, id: SiteId) -> AppResult
     };
     state.save()?;
 
-    let detection = detect::detect(&PathBuf::from(&site_ref.root_path))?;
+    let root = PathBuf::from(&site_ref.root_path);
+    let detection = detect::detect(&root)?;
+
+    // Re-arm the file watcher on the new site root so site:changed events
+    // start firing for the freshly-opened site.
+    let handle = watcher::spawn(app, root)?;
+    state.replace_watcher(Some(handle));
+
     Ok(Site::from_ref_with_detection(&site_ref, detection))
 }
 
@@ -136,5 +148,6 @@ pub fn workspace_set_active(state: State<'_, AppState>, id: SiteId) -> AppResult
 #[specta::specta]
 pub fn workspace_clear_active(state: State<'_, AppState>) -> AppResult<()> {
     state.workspace.lock().active_site_id = None;
+    state.replace_watcher(None);
     state.save()
 }

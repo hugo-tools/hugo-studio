@@ -6,6 +6,7 @@
 import { commands, type Result } from "./bindings";
 import type {
   AppError,
+  ContentScanResult,
   DetectionInfo,
   JsonValue,
   LoadedConfig,
@@ -42,6 +43,8 @@ export const tauri = {
     unwrap(commands.configGet(siteId)),
   configSave: (siteId: SiteId, merged: JsonValue): Promise<LoadedConfig> =>
     unwrap(commands.configSave(siteId, merged)),
+  contentList: (siteId: SiteId): Promise<ContentScanResult> =>
+    unwrap(commands.contentList(siteId)),
 };
 
 export function isAppError(value: unknown): value is AppError {

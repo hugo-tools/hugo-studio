@@ -24,6 +24,14 @@ async configSave(siteId: SiteId, merged: JsonValue) : Promise<Result<LoadedConfi
     else return { status: "error", error: e  as any };
 }
 },
+async contentList(siteId: SiteId) : Promise<Result<ContentScanResult, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("content_list", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async healthCheck() : Promise<HealthStatus> {
     return await TAURI_INVOKE("health_check");
 },
@@ -125,6 +133,31 @@ export type ConfigSource = { path: string; format: ConfigFormat;
  * `hugo.{toml,yaml,json}` case).
  */
 mountKey: string | null }
+/**
+ * Hugo's three structural content kinds, plus the synthetic `Section`
+ * for directories that contain content but no `_index.*`.
+ */
+export type ContentKind = "section" | "branchBundle" | "leafBundle" | "singlePage"
+export type ContentScanResult = { languageInfo: LanguageInfo; items: ContentSummary[] }
+export type ContentSummary = { 
+/**
+ * Stable ID = path relative to the language-resolved content root,
+ * using forward slashes. Distinct translations of the same logical
+ * page share the same `id` but have different `language`.
+ */
+id: string; kind: ContentKind; 
+/**
+ * Top-level section under content/ (e.g. "posts", "docs"). `None`
+ * for items that sit at the very top (`_index.md` of the site).
+ */
+section: string | null; language: string; 
+/**
+ * Absolute filesystem path to the file the user would edit.
+ * For bundles this is the index file; for sections it's the
+ * directory itself (no editable target until M4 introduces virtual
+ * section editing).
+ */
+path: string; title: string | null; draft: boolean; date: string | null; depth: number }
 export type DetectionInfo = { kind: HugoConfigKind; 
 /**
  * Absolute path to the discovered file (single-file kinds) or to the
@@ -139,6 +172,21 @@ export type HealthStatus = { status: string; version: string }
  */
 export type HugoConfigKind = "hugoToml" | "hugoYaml" | "hugoJson" | "configToml" | "configYaml" | "configJson" | "defaultDirectory"
 export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
+export type Language = { code: string; name: string; weight: number }
+export type LanguageInfo = { strategy: LanguageStrategy; languages: Language[]; defaultLanguage: string }
+export type LanguageStrategy = 
+/**
+ * No `languages` block in config — site is monolingual.
+ */
+"mono" | 
+/**
+ * Translations live as `posts/hello.en.md`, `posts/hello.it.md`.
+ */
+"filename" | 
+/**
+ * Translations live under `content/<lang>/posts/hello.md`.
+ */
+"directory"
 /**
  * Result of [`load`] — both the canonical merged JSON for the UI to
  * render, and the per-file mapping needed to write changes back.
