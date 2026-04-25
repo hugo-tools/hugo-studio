@@ -24,6 +24,14 @@ fe-build:
 cargo-check:
 	docker compose run --rm dev cargo check --manifest-path src-tauri/Cargo.toml
 
+# Run the backend test suite (includes the bindings round-trip later).
+cargo-test:
+	docker compose run --rm dev cargo test --manifest-path src-tauri/Cargo.toml
+
+# Regenerate src/lib/tauri/bindings.ts from the live command list.
+gen-bindings:
+	docker compose run --rm dev bash -lc "cd src-tauri && cargo run --quiet --bin gen-bindings"
+
 # Format both sides.
 fmt:
 	docker compose run --rm dev bash -lc "cargo fmt --manifest-path src-tauri/Cargo.toml && npm run fmt"

@@ -15,12 +15,17 @@ Le milestone seguono il prompt iniziale. Ogni voce è atomica e testabile.
 
 ## M1 — Workspace e site detection
 
-- [ ] Tipi `Workspace`, `SiteRef`, `Site` in Rust con codegen TS via specta
-- [ ] Comandi `workspace_*` + `site_open`
-- [ ] Persistenza workspace in `app_data_dir/workspace.json`
-- [ ] UI: schermata iniziale con elenco siti, "Add site" (file picker), "Open"
-- [ ] Detection `hugo.{toml,yaml,json}` / `config.{toml,yaml,json}` / `config/_default/`
-- [ ] **Criterio**: aggiungo 2 siti, switch tra loro, l'app ricorda la lista al riavvio
+- [x] Tipi `Workspace`, `SiteRef`, `Site`, `SiteId` (UUID) in Rust con codegen TS via specta
+- [x] Comandi: `workspace_list_sites`, `workspace_active_site_id`, `workspace_add_site`, `workspace_remove_site`, `workspace_rename_site`, `workspace_set_active`, `workspace_clear_active`, `site_detect`
+- [x] Persistenza workspace in `app_data_dir/workspace.json` (write atomico via tmp+rename)
+- [x] UI: schermata iniziale con elenco siti, "Add site" (file picker via `tauri-plugin-dialog`), "Open" e "Remove" con AlertDialog di conferma
+- [x] Detection `hugo.{toml,yaml,yml,json}` / `config.{toml,yaml,yml,json}` / `config/_default/` (priorità nell'ordine; root single-file vince sempre)
+- [x] Plugin dialog registrato sia su Cargo che su capabilities (`dialog:default`)
+- [x] Specta-typescript con header `@ts-nocheck` + `eslint-disable` sui `bindings.ts` autogenerati
+- [x] AppError tipizzato con `thiserror` e discriminator JSON, wrapper TS `tauri.*` che fa `unwrap` del `Result<T, AppError>`
+- [x] Bin `gen-bindings` per rigenerare i tipi TS senza display (`make gen-bindings`)
+- [x] Test unit: 7 detect + 3 persistence + 1 health = 11 passed
+- [ ] **Criterio**: aggiungo 2 siti, switch tra loro, l'app ricorda la lista al riavvio (validabile solo eseguendo il binary su un host con display)
 
 ## M2 — Lettura della config del sito
 

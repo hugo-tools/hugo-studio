@@ -1,3 +1,3 @@
-pub mod health_check;
+pub mod ids;
 pub mod site;
 pub mod workspace;

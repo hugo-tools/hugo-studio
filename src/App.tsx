@@ -1,48 +1,41 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { commands, type HealthStatus } from "@/lib/tauri";
-import { Button } from "@/components/ui/button";
 
+import { tauri } from "@/lib/tauri";
+import { useWorkspaceStore } from "@/store/workspace";
+import { WorkspaceScreen } from "@/features/workspace/WorkspaceScreen";
+import { SiteShell } from "@/features/site/SiteShell";
+
+/**
+ * On mount we ask the backend for its persisted active site (if any) and
+ * reopen it so a refresh / restart lands the user back where they were.
+ */
 export function App() {
-  const health = useQuery<HealthStatus>({
-    queryKey: ["health"],
-    queryFn: () => commands.healthCheck(),
+  const activeSite = useWorkspaceStore((s) => s.activeSite);
+  const setActiveSite = useWorkspaceStore((s) => s.setActiveSite);
+
+  const restored = useQuery({
+    queryKey: ["active-site-bootstrap"],
+    queryFn: async () => {
+      const id = await tauri.workspaceActiveSiteId();
+      if (!id) return null;
+      return tauri.workspaceSetActive(id);
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background text-foreground">
-      <div className="flex flex-col items-center gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Hugo Studio</h1>
-        <p className="text-sm text-muted-foreground">
-          Desktop editor for Hugo sites — M0 bootstrap
-        </p>
-      </div>
+  useEffect(() => {
+    if (restored.data && !activeSite) setActiveSite(restored.data);
+  }, [restored.data, activeSite, setActiveSite]);
 
-      <div className="flex flex-col items-center gap-2 rounded-lg border bg-card px-6 py-4 shadow-sm">
-        {health.isPending && (
-          <span className="text-sm text-muted-foreground">
-            Checking backend…
-          </span>
-        )}
-        {health.isError && (
-          <span className="text-sm text-destructive">
-            Backend unreachable: {String(health.error)}
-          </span>
-        )}
-        {health.data && (
-          <>
-            <span className="text-2xl font-medium">
-              {health.data.status === "ready" ? "ready" : health.data.status}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              v{health.data.version}
-            </span>
-          </>
-        )}
+  if (restored.isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+        Loading workspace…
       </div>
+    );
+  }
 
-      <Button variant="outline" size="sm" onClick={() => health.refetch()}>
-        Re-check
-      </Button>
-    </main>
-  );
+  return activeSite ? <SiteShell site={activeSite} /> : <WorkspaceScreen />;
 }
