@@ -43,6 +43,44 @@ hugo-studio/
     └── tauri.conf.json
 ```
 
+## Per gli autori di temi: `.hugoeditor/theme-schema.json`
+
+Hugo Studio cerca prima uno schema esplicito sotto `themes/<n>/.hugoeditor/theme-schema.json`. Se lo trovi, le UI mostra un badge `Manifest` e usa _solo_ i campi che hai dichiarato. Esempio minimale:
+
+```json
+{
+  "fields": [
+    {
+      "key": "author",
+      "label": "Author name",
+      "fieldType": "string",
+      "required": true,
+      "default": null,
+      "enumValues": null,
+      "group": "Identity",
+      "hidden": false,
+      "description": "Visible byline below each post"
+    },
+    {
+      "key": "showReadingTime",
+      "label": "Show reading time",
+      "fieldType": "boolean",
+      "required": false,
+      "default": true,
+      "enumValues": null,
+      "group": "Article meta",
+      "hidden": false,
+      "description": null
+    }
+  ],
+  "unknownFieldsPolicy": "preserve"
+}
+```
+
+**`fieldType`** può essere uno fra: `string`, `text`, `number`, `boolean`, `date`, `dateTime`, `tags` (chip input con autocomplete), `stringArray` (chip input senza autocomplete), `json` (catch-all per oggetti / array misti).
+
+Senza manifest, Hugo Studio prova a leggere `[params]` da `themes/<n>/config.{toml,yaml,json}` o `themes/<n>/theme.toml` (badge `Theme defaults`); altrimenti inferisce i tipi dai params già impostati nel sito (badge `Inferred`).
+
 ## Decisioni tecniche
 
 Vedi [`DECISIONS.md`](./DECISIONS.md). Ogni scelta è una riga con razionale.

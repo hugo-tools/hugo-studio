@@ -133,7 +133,7 @@ const STANDARD_KEYS: &[&str] = &[
 
 /// Pick a [`FieldType`] for a value. Returns `None` for `null` so that
 /// inference can disambiguate from neighbours that have a real value.
-fn classify_value(v: &serde_json::Value) -> Option<FieldType> {
+pub(crate) fn classify_value(v: &serde_json::Value) -> Option<FieldType> {
     match v {
         serde_json::Value::Null => None,
         serde_json::Value::Bool(_) => Some(FieldType::Boolean),
@@ -280,7 +280,7 @@ pub fn infer_section_schema(
     })
 }
 
-fn humanise(key: &str) -> String {
+pub(crate) fn humanise(key: &str) -> String {
     // very small helper: split camelCase / snake_case and capitalise
     let mut out = String::with_capacity(key.len() + 4);
     let mut prev_lower = false;

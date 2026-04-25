@@ -63,6 +63,22 @@ async siteDetect(path: string) : Promise<Result<DetectionInfo, AppError>> {
     else return { status: "error", error: e  as any };
 }
 },
+async themeGet(siteId: SiteId) : Promise<Result<ThemeInfo, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("theme_get", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async themeSaveParams(siteId: SiteId, params: JsonValue) : Promise<Result<ThemeInfo, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("theme_save_params", { siteId, params }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async workspaceActiveSiteId() : Promise<Result<SiteId | null, AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("workspace_active_site_id") };
@@ -232,6 +248,22 @@ export type LanguageStrategy =
  * render, and the per-file mapping needed to write changes back.
  */
 export type LoadedConfig = { format: ConfigFormat; sources: ConfigSource[]; merged: JsonValue }
+export type SchemaSource = 
+/**
+ * Authoritative schema shipped by the theme author at
+ * `themes/<name>/.hugoeditor/theme-schema.json`.
+ */
+"manifest" | 
+/**
+ * Inferred from the theme's `[params]` defaults (`config.*` /
+ * `theme.toml`).
+ */
+"defaults" | 
+/**
+ * Last resort — derived from the values currently set in the site's
+ * config.
+ */
+"inferred"
 /**
  * Runtime view of an opened site. M1 only fills the structural pieces
  * (id, paths, detection info); config / theme / languages arrive in M2 / M5 / M3.
@@ -243,6 +275,7 @@ export type SiteId = string
  * (config, theme, languages…) is only built when a site is opened.
  */
 export type SiteRef = { id: SiteId; name: string; rootPath: string; lastOpened: string }
+export type ThemeInfo = { themeName: string | null; themePath: string | null; schema: FrontMatterSchema; source: SchemaSource; params: JsonValue }
 export type UnknownFieldsPolicy = "preserve" | "warn" | "strip"
 
 /** tauri-specta globals **/

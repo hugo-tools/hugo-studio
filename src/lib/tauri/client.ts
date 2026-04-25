@@ -14,6 +14,7 @@ import type {
   Site,
   SiteId,
   SiteRef,
+  ThemeInfo,
 } from "./bindings";
 
 async function unwrap<T>(p: Promise<Result<T, AppError>>): Promise<T> {
@@ -55,6 +56,10 @@ export const tauri = {
     body: string,
   ): Promise<ContentEditPayload> =>
     unwrap(commands.contentSave(siteId, path, frontMatter, body)),
+  themeGet: (siteId: SiteId): Promise<ThemeInfo> =>
+    unwrap(commands.themeGet(siteId)),
+  themeSaveParams: (siteId: SiteId, params: JsonValue): Promise<ThemeInfo> =>
+    unwrap(commands.themeSaveParams(siteId, params)),
 };
 
 export function isAppError(value: unknown): value is AppError {

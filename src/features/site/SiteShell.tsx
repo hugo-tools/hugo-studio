@@ -2,11 +2,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { describeError, tauri, type Site } from "@/lib/tauri";
 import { useWorkspaceStore } from "@/store/workspace";
 import { ContentTree } from "@/features/content-tree/ContentTree";
 import { EditorView } from "@/features/editor/EditorView";
 import { SiteSettingsPanel } from "@/features/site-settings/SiteSettingsPanel";
+import { ThemeSettingsPanel } from "@/features/theme-settings/ThemeSettingsPanel";
 
 const KIND_LABEL: Record<Site["detection"]["kind"], string> = {
   hugoToml: "hugo.toml",
@@ -87,9 +89,23 @@ export function SiteShell({ site }: Props) {
           {selection ? (
             <EditorView site={site} selection={selection} />
           ) : (
-            <div className="h-full overflow-auto">
-              <SiteSettingsPanel site={site} />
-            </div>
+            <Tabs
+              defaultValue="site"
+              className="flex h-full flex-col overflow-hidden"
+            >
+              <div className="border-b px-6 py-2">
+                <TabsList>
+                  <TabsTrigger value="site">Site</TabsTrigger>
+                  <TabsTrigger value="theme">Theme</TabsTrigger>
+                </TabsList>
+              </div>
+              <TabsContent value="site" className="mt-0 flex-1 overflow-auto">
+                <SiteSettingsPanel site={site} />
+              </TabsContent>
+              <TabsContent value="theme" className="mt-0 flex-1 overflow-auto">
+                <ThemeSettingsPanel site={site} />
+              </TabsContent>
+            </Tabs>
           )}
         </main>
       </div>

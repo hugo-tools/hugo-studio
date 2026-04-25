@@ -10,6 +10,7 @@ pub mod error;
 pub mod hugo;
 pub mod persistence;
 pub mod state;
+pub mod theme;
 pub mod watcher;
 
 use crate::persistence::workspace_store::WorkspaceStore;
@@ -29,6 +30,8 @@ pub fn make_specta_builder() -> Builder<tauri::Wry> {
         commands::content::content_save,
         commands::health_check::health_check,
         commands::site::site_detect,
+        commands::theme::theme_get,
+        commands::theme::theme_save_params,
         commands::workspace::workspace_active_site_id,
         commands::workspace::workspace_add_site,
         commands::workspace::workspace_clear_active,

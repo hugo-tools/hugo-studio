@@ -69,9 +69,15 @@ Le milestone seguono il prompt iniziale. Ogni voce è atomica e testabile.
 
 ## M5 — Theme params editor
 
-- [ ] Cascata schema: manifest opt-in → defaults del tema → inferenza dai params correnti
-- [ ] Pannello "Theme Settings" raggruppato; badge fonte schema
-- [ ] **Criterio**: PaperMod, modifica `params.author`, salvataggio corretto in `hugo.toml`
+- [x] Cascata schema: `themes/<n>/.hugoeditor/theme-schema.json` (Manifest) → `themes/<n>/{config.{toml,yaml,json},theme.toml}` con `[params]` (Defaults) → introspezione dei `params` correnti del sito (Inferred)
+- [x] Comandi `theme_get` / `theme_save_params` che riusano `cascade::save` (M2) — i params editati atterrano nel file giusto sia in single-file (`hugo.toml`) sia in `_default/params.toml`
+- [x] Effective params: nel modo Defaults, i valori del sito vincono sui default del tema (form si apre con quello che l'utente ha impostato)
+- [x] ThemeInfo gestisce theme array (component themes layered → primary preso, secondari TODO)
+- [x] Pannello "Theme Settings" riusa `FrontMatterForm` (stessa shape `FieldDef` di M4); badge fonte schema con icona + tooltip esplicativo (Manifest / Theme defaults / Inferred)
+- [x] SiteShell con Tabs `[Site | Theme]` quando non c'è una selezione editor
+- [x] Documentato il formato `theme-schema.json` nel README per gli autori di temi
+- [x] Test unit: 74 totali (era 68) — Manifest wins, Defaults inferred, Inferred fallback, missing theme dir graceful, save su hugo.toml, save su `_default/params.toml`
+- [ ] **Criterio**: PaperMod, modifica `params.author`, salvataggio corretto in `hugo.toml` (validato dai test cargo; verifica visiva sull'app reale ancora da fare)
 
 ## M6 — Live preview
 
