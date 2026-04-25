@@ -88,16 +88,31 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Ad-hoc codesign for macOS so the bundle ships with a (self-signed)
+          # signature instead of nothing — drops the "is damaged" Gatekeeper
+          # error down to "unidentified developer" which the user can bypass
+          # via right-click → Open. Real notarization needs a paid Apple Dev ID.
+          APPLE_SIGNING_IDENTITY: ${{ startsWith(matrix.os, 'macos') && '-' || '' }}
         with:
           tagName: ${{ steps.tag.outputs.name }}
           releaseName: "Hugo Studio ${{ steps.tag.outputs.name }}"
           releaseBody: |
             Build automatica.
 
-            Asset prodotti:
-            - macOS: `.dmg` (arm64 e x64)
+            **Asset prodotti**
+            - macOS: `.dmg` (arm64 e x64) — *ad-hoc signed, non notarizzato*
             - Linux: AppImage e `.deb`
             - Windows: NSIS `.exe`
+
+            **macOS — primo avvio**
+            Il binario non è notarizzato (serve un Apple Developer ID a pagamento).
+            Al primo lancio macOS dirà *"impossibile aprire perché Apple non può
+            verificarlo"*. Due strade:
+            1. Tasto destro sull'app → `Apri` → conferma nel dialog.
+            2. Da Terminale, dopo aver copiato l'app in `/Applications`:
+               ```
+               xattr -dr com.apple.quarantine "/Applications/Hugo Studio.app"
+               ```
 
             Cambiamenti: vedi commit fra il tag precedente e questo.
           releaseDraft: true
@@ -108,6 +123,8 @@ jobs:
       - name: Build only (no tag — smoke test)
         if: steps.tag.outputs.publish != 'true'
         uses: tauri-apps/tauri-action@v0
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ startsWith(matrix.os, 'macos') && '-' || '' }}
         with:
           args: ${{ matrix.tauri-args }}
 
