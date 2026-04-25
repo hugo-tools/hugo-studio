@@ -48,6 +48,22 @@ async configSave(siteId: SiteId, merged: JsonValue) : Promise<Result<LoadedConfi
     else return { status: "error", error: e  as any };
 }
 },
+async contentArchetypes(siteId: SiteId) : Promise<Result<Archetype[], AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("content_archetypes", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async contentCreate(siteId: SiteId, options: CreateOptions) : Promise<Result<CreatedContent, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("content_create", { siteId, options }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async contentGet(siteId: SiteId, path: string) : Promise<Result<ContentEditPayload, AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("content_get", { siteId, path }) };
@@ -88,9 +104,9 @@ async gitCommit(siteId: SiteId, message: string) : Promise<Result<CommitResult, 
     else return { status: "error", error: e  as any };
 }
 },
-async gitPull(siteId: SiteId) : Promise<Result<GitStatus, AppError>> {
+async gitPull(siteId: SiteId, strategy: PullStrategy) : Promise<Result<GitStatus, AppError>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("git_pull", { siteId }) };
+    return { status: "ok", data: await TAURI_INVOKE("git_pull", { siteId, strategy }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -107,6 +123,22 @@ async gitPush(siteId: SiteId) : Promise<Result<GitStatus, AppError>> {
 async gitStage(siteId: SiteId, paths: string[]) : Promise<Result<GitStatus, AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("git_stage", { siteId, paths }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async gitStashPop(siteId: SiteId) : Promise<Result<GitStatus, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("git_stash_pop", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async gitStashSave(siteId: SiteId, message: string) : Promise<Result<GitStatus, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("git_stash_save", { siteId, message }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -258,6 +290,17 @@ async workspaceSetActive(id: SiteId) : Promise<Result<Site, AppError>> {
  * TypeScript side can switch on `kind` without parsing free-form strings.
  */
 export type AppError = { kind: "not_a_hugo_site"; message: string } | { kind: "site_not_found"; message: string } | { kind: "not_a_directory"; message: string } | { kind: "path_traversal"; message: string } | { kind: "io"; message: string } | { kind: "serde"; message: string } | { kind: "internal"; message: string } | { kind: "hugo_binary"; message: string } | { kind: "preview_already_running"; message: string } | { kind: "no_preview_running" }
+export type Archetype = { 
+/**
+ * User-facing name = stem of the archetype file or directory.
+ * "default" is reserved for the fallback applied to every section.
+ */
+name: string; 
+/**
+ * Absolute path to the archetype's index file (for bundles) or to
+ * the archetype file itself (for single pages).
+ */
+path: string; kind: ContentKind }
 export type AssetContext = 
 /**
  * Co-locate the file inside the bundle directory of `content_id`.
@@ -351,6 +394,27 @@ section: string | null; language: string;
  * section editing).
  */
 path: string; title: string | null; draft: boolean; date: string | null; depth: number }
+export type CreateOptions = { section: string; slug: string; 
+/**
+ * Optional explicit archetype name (matches `Archetype.name`); when
+ * `None` the resolver walks `<section>` → `default` → built-in.
+ */
+archetype: string | null; 
+/**
+ * Optional language code. When the site uses the directory
+ * strategy, this determines the `<lang>/` prefix; for the filename
+ * strategy it becomes a `.lang` suffix on the file stem.
+ */
+language: string | null }
+export type CreatedContent = { 
+/**
+ * Absolute path of the created file (or its index, for bundles).
+ */
+path: string; 
+/**
+ * Site-relative content id (`posts/hello.md` or `posts/hello/`).
+ */
+id: string; kind: ContentKind; language: string | null; archetypeUsed: string }
 export type DetectionInfo = { kind: HugoConfigKind; 
 /**
  * Absolute path to the discovered file (single-file kinds) or to the
@@ -431,6 +495,22 @@ export type LanguageStrategy =
 export type LoadedConfig = { format: ConfigFormat; sources: ConfigSource[]; merged: JsonValue }
 export type PreviewHandle = { url: string; port: number; hugoPath: string }
 export type PreviewStatus = { running: boolean; url: string | null; port: number | null }
+/**
+ * How to resolve a non-fast-forward situation when pulling.
+ */
+export type PullStrategy = 
+/**
+ * Refuse to pull anything that isn't a clean fast-forward — the
+ * safe default. The UI surfaces a button to retry with `ForceReset`
+ * after explicit confirmation.
+ */
+"fastForward" | 
+/**
+ * `git fetch && git reset --hard <upstream>` — local commits not in
+ * the upstream are silently discarded. Combine with [`stash_save`]
+ * beforehand if you also want to preserve working-tree changes.
+ */
+"forceReset"
 export type SchemaSource = 
 /**
  * Authoritative schema shipped by the theme author at

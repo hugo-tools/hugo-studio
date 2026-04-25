@@ -4,7 +4,7 @@ use tauri::State;
 
 use crate::domain::ids::SiteId;
 use crate::error::{AppError, AppResult};
-use crate::git::{self, CloneOptions, CloneResult, CommitResult, GitStatus};
+use crate::git::{self, CloneOptions, CloneResult, CommitResult, GitStatus, PullStrategy};
 use crate::state::AppState;
 
 fn site_root(state: &State<'_, AppState>, site_id: SiteId) -> AppResult<PathBuf> {
@@ -68,9 +68,33 @@ pub fn git_commit(
 
 #[tauri::command]
 #[specta::specta]
-pub fn git_pull(state: State<'_, AppState>, site_id: SiteId) -> AppResult<GitStatus> {
+pub fn git_pull(
+    state: State<'_, AppState>,
+    site_id: SiteId,
+    strategy: PullStrategy,
+) -> AppResult<GitStatus> {
     let root = site_root(&state, site_id)?;
-    git::pull(&root)?;
+    git::pull(&root, strategy)?;
+    git::status(&root)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn git_stash_save(
+    state: State<'_, AppState>,
+    site_id: SiteId,
+    message: String,
+) -> AppResult<GitStatus> {
+    let root = site_root(&state, site_id)?;
+    git::stash_save(&root, &message)?;
+    git::status(&root)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn git_stash_pop(state: State<'_, AppState>, site_id: SiteId) -> AppResult<GitStatus> {
+    let root = site_root(&state, site_id)?;
+    git::stash_pop(&root)?;
     git::status(&root)
 }
 

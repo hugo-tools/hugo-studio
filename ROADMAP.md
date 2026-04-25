@@ -111,9 +111,21 @@ Le milestone seguono il prompt iniziale. Ogni voce è atomica e testabile.
 
 ## M8 — Creazione contenuti e archetypes
 
-- [ ] Lettura archetypes (`archetypes/{section}.md` + `default.md`)
-- [ ] Wizard "New content" (sezione, slug, archetype, lingua)
-- [ ] **Criterio**: nuovo post parte da archetype corretto, appare nel tree
+- [x] `content/archetype.rs` enumerates `archetypes/<name>.md` + `archetypes/<name>/index.md` (single page + leaf-bundle archetypes), sorts `default` first
+- [x] `resolve_template` walks `<requested>` → `<section>` → `default` → built-in
+- [x] Minimal Go-template substitution (`.Name`, `.Title`, `.Slug`, `.Section`, `.Date`, plus the canonical `{{ replace .Name "-" " " | title }}` and `_` variant) — anything else stays in place for the user to edit
+- [x] `content/create.rs` — slug + section sanitisation, language-aware target path (filename `.lang` suffix vs directory `<lang>/` prefix), atomic write, refuses to overwrite, copies sibling files of bundle archetypes verbatim
+- [x] Commands `content_archetypes` + `content_create`
+- [x] `NewContentDialog` from the ContentTree header — title → slug live derivation, section autocomplete, archetype dropdown (`(auto)` default), language dropdown only when site is multilingual; on success opens the new content in the editor
+- [x] Test unit: 107 totali (era 93)
+- [x] **Criterio**: nuovo post parte da archetype corretto, appare nel tree (validato dai test, verifica visiva ancora da fare sull'app reale)
+
+## v0.9.0 UX & git extras (shipped together)
+
+- [x] CodeMirror body editor reads its colors from the `--background`/`--foreground` Tailwind variables → dark mode no longer renders white-on-white
+- [x] Content tree sort selector (Name / Newest first / Oldest first); folders still grouped first
+- [x] Git: `PullStrategy { FastForward, ForceReset }` — backend `git_pull` takes a strategy; backend `git_stash_save` + `git_stash_pop`
+- [x] GitPanel: `Stash`, `Pop stash`, `Force pull` (auto-stashes dirty working tree first, confirms before discarding local commits)
 
 ## M9 — Polish e onboarding
 

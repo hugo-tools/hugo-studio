@@ -52,15 +52,44 @@ export const BodyEditor = forwardRef<BodyEditorHandle, Props>(
         extensions={[
           markdown(),
           EditorView.lineWrapping,
+          // Bind every visible CodeMirror surface to our Tailwind CSS
+          // variables so light/dark mode swap automatically with the
+          // rest of the app — without this the editor was rendering
+          // white text on a white background in dark mode.
           EditorView.theme({
-            "&": { height: "100%" },
+            "&": {
+              height: "100%",
+              backgroundColor: "hsl(var(--background))",
+              color: "hsl(var(--foreground))",
+            },
             ".cm-scroller": {
               fontFamily:
                 "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace",
               fontSize: "13px",
               lineHeight: "1.6",
             },
-            ".cm-content": { padding: "16px 20px" },
+            ".cm-content": {
+              padding: "16px 20px",
+              caretColor: "hsl(var(--foreground))",
+            },
+            ".cm-cursor, .cm-dropCursor": {
+              borderLeftColor: "hsl(var(--foreground))",
+            },
+            "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
+              {
+                backgroundColor: "hsl(var(--accent))",
+              },
+            ".cm-gutters": {
+              backgroundColor: "hsl(var(--muted))",
+              color: "hsl(var(--muted-foreground))",
+              border: "none",
+            },
+            ".cm-activeLine": {
+              backgroundColor: "hsl(var(--accent) / 0.25)",
+            },
+            ".cm-activeLineGutter": {
+              backgroundColor: "hsl(var(--accent) / 0.25)",
+            },
           }),
         ]}
         className="h-full"

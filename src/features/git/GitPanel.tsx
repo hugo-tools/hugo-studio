@@ -5,7 +5,10 @@ import {
   ArrowUpFromLine,
   GitBranch,
   GitCommit,
+  PackageOpen,
+  Package,
   RefreshCw,
+  Zap,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -57,13 +60,40 @@ export function GitPanel({ site }: Props) {
     onError: (e) => alert(describeError(e)),
   });
   const pull = useMutation({
-    mutationFn: () => tauri.gitPull(site.id),
+    mutationFn: () => tauri.gitPull(site.id, "fastForward"),
     onSuccess: (next) =>
       queryClient.setQueryData(["git-status", site.id], next),
     onError: (e) => alert(describeError(e)),
   });
   const push = useMutation({
     mutationFn: () => tauri.gitPush(site.id),
+    onSuccess: (next) =>
+      queryClient.setQueryData(["git-status", site.id], next),
+    onError: (e) => alert(describeError(e)),
+  });
+  const stash = useMutation({
+    mutationFn: () => tauri.gitStashSave(site.id, "stash from Hugo Studio"),
+    onSuccess: (next) =>
+      queryClient.setQueryData(["git-status", site.id], next),
+    onError: (e) => alert(describeError(e)),
+  });
+  const stashPop = useMutation({
+    mutationFn: () => tauri.gitStashPop(site.id),
+    onSuccess: (next) =>
+      queryClient.setQueryData(["git-status", site.id], next),
+    onError: (e) => alert(describeError(e)),
+  });
+  // "Force pull" = stash any working changes, then reset hard to upstream.
+  // The stash preserves the user's edits even though the local commits
+  // are discarded.
+  const forcePull = useMutation({
+    mutationFn: async () => {
+      const dirty = (status.data?.changes.length ?? 0) > 0;
+      if (dirty) {
+        await tauri.gitStashSave(site.id, "auto-stash before force pull");
+      }
+      return tauri.gitPull(site.id, "forceReset");
+    },
     onSuccess: (next) =>
       queryClient.setQueryData(["git-status", site.id], next),
     onError: (e) => alert(describeError(e)),
@@ -145,13 +175,14 @@ export function GitPanel({ site }: Props) {
             <span>· {data.changes.length} change(s)</span>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           <Button
             type="button"
             size="sm"
             variant="outline"
             onClick={() => pull.mutate()}
             disabled={!canPull || pull.isPending}
+            title="Fast-forward only"
           >
             <ArrowDownToLine className="size-4" />
             {pull.isPending ? "Pulling…" : "Pull"}
@@ -165,6 +196,48 @@ export function GitPanel({ site }: Props) {
           >
             <ArrowUpFromLine className="size-4" />
             {push.isPending ? "Pushing…" : "Push"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => stash.mutate()}
+            disabled={data.changes.length === 0 || stash.isPending}
+            title="git stash all changes"
+          >
+            <Package className="size-4" />
+            {stash.isPending ? "Stashing…" : "Stash"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => stashPop.mutate()}
+            disabled={stashPop.isPending}
+            title="git stash pop (apply most recent stash)"
+          >
+            <PackageOpen className="size-4" />
+            {stashPop.isPending ? "Popping…" : "Pop stash"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            onClick={() => {
+              if (
+                confirm(
+                  "Force pull will discard local commits and reset to upstream. " +
+                    "Working-tree changes will be auto-stashed first. Continue?",
+                )
+              ) {
+                forcePull.mutate();
+              }
+            }}
+            disabled={!data.upstream || forcePull.isPending}
+            title="Stash + reset --hard to upstream"
+          >
+            <Zap className="size-4" />
+            {forcePull.isPending ? "Forcing…" : "Force pull"}
           </Button>
           <Button
             type="button"

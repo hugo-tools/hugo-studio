@@ -5,6 +5,8 @@ use specta::Type;
 use tauri::State;
 
 use crate::config::cascade;
+use crate::content::archetype::{self, Archetype};
+use crate::content::create::{self as create_content, CreateOptions, CreatedContent};
 use crate::content::document::{self, FrontMatterFormat};
 use crate::content::scan::{self, ContentScanResult};
 use crate::content::schema::{infer_section_schema, FrontMatterSchema};
@@ -53,6 +55,29 @@ pub fn content_get(
         schema,
         path: abs.display().to_string(),
     })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn content_archetypes(
+    state: State<'_, AppState>,
+    site_id: SiteId,
+) -> AppResult<Vec<Archetype>> {
+    let root = site_root(&state, site_id)?;
+    archetype::list(&root)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn content_create(
+    state: State<'_, AppState>,
+    site_id: SiteId,
+    options: CreateOptions,
+) -> AppResult<CreatedContent> {
+    let root = site_root(&state, site_id)?;
+    let det = detect::detect(&root)?;
+    let merged = cascade::load(&det)?.merged;
+    create_content::create(&root, &merged, &options)
 }
 
 #[tauri::command]

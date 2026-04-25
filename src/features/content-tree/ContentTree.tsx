@@ -20,8 +20,16 @@ import {
 } from "@/lib/tauri";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/store/workspace";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown, FilePlus2 } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
-import { buildTree, type TreeNode } from "./buildTree";
+import { NewContentDialog } from "./NewContentDialog";
+import {
+  buildTree,
+  SORT_LABELS,
+  type SortMode,
+  type TreeNode,
+} from "./buildTree";
 
 interface Props {
   site: Site;
@@ -30,6 +38,8 @@ interface Props {
 export function ContentTree({ site }: Props) {
   const queryClient = useQueryClient();
   const [activeLang, setActiveLang] = useState<string | null>(null);
+  const [newOpen, setNewOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<SortMode>("name");
 
   const scan = useQuery<ContentScanResult>({
     queryKey: ["content", site.id],
@@ -81,21 +91,56 @@ export function ContentTree({ site }: Props) {
     return map;
   }, [scan.data]);
 
-  const tree = useMemo(() => buildTree(filteredItems), [filteredItems]);
+  const tree = useMemo(
+    () => buildTree(filteredItems, sortBy),
+    [filteredItems, sortBy],
+  );
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b px-3 py-2">
-        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Content
+      <div className="flex flex-col gap-1 border-b px-3 py-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Content
+            </span>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-6"
+              onClick={() => setNewOpen(true)}
+              aria-label="New content"
+              title="New content"
+            >
+              <FilePlus2 className="size-3.5" />
+            </Button>
+          </div>
+          {scan.data && (
+            <LanguageSwitcher
+              languages={scan.data.languageInfo.languages}
+              active={activeLang ?? scan.data.languageInfo.defaultLanguage}
+              onChange={setActiveLang}
+            />
+          )}
         </div>
-        {scan.data && (
-          <LanguageSwitcher
-            languages={scan.data.languageInfo.languages}
-            active={activeLang ?? scan.data.languageInfo.defaultLanguage}
-            onChange={setActiveLang}
-          />
-        )}
+        <label
+          className="flex items-center gap-1.5 text-[10px] text-muted-foreground"
+          title="Tree sort order"
+        >
+          <ArrowUpDown className="size-3" />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortMode)}
+            className="flex-1 rounded border bg-background px-1 py-0.5 text-[10px]"
+          >
+            {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+              <option key={mode} value={mode}>
+                {SORT_LABELS[mode]}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="flex-1 overflow-auto px-1 py-2">
@@ -128,6 +173,13 @@ export function ContentTree({ site }: Props) {
           ))}
         </ul>
       </div>
+
+      <NewContentDialog
+        open={newOpen}
+        onOpenChange={setNewOpen}
+        site={site}
+        scan={scan.data ?? null}
+      />
     </div>
   );
 }

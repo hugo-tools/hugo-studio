@@ -6,6 +6,7 @@
 import { commands, type Result } from "./bindings";
 import type {
   AppError,
+  Archetype,
   AssetContext,
   AssetRef,
   CloneOptions,
@@ -13,6 +14,8 @@ import type {
   CommitResult,
   ContentEditPayload,
   ContentScanResult,
+  CreateOptions,
+  CreatedContent,
   DetectionInfo,
   GitStatus,
   JsonValue,
@@ -55,6 +58,12 @@ export const tauri = {
     unwrap(commands.configSave(siteId, merged)),
   contentList: (siteId: SiteId): Promise<ContentScanResult> =>
     unwrap(commands.contentList(siteId)),
+  contentArchetypes: (siteId: SiteId): Promise<Archetype[]> =>
+    unwrap(commands.contentArchetypes(siteId)),
+  contentCreate: (
+    siteId: SiteId,
+    options: CreateOptions,
+  ): Promise<CreatedContent> => unwrap(commands.contentCreate(siteId, options)),
   contentGet: (siteId: SiteId, path: string): Promise<ContentEditPayload> =>
     unwrap(commands.contentGet(siteId, path)),
   contentSave: (
@@ -92,10 +101,16 @@ export const tauri = {
     unwrap(commands.gitUnstage(siteId, paths)),
   gitCommit: (siteId: SiteId, message: string): Promise<CommitResult> =>
     unwrap(commands.gitCommit(siteId, message)),
-  gitPull: (siteId: SiteId): Promise<GitStatus> =>
-    unwrap(commands.gitPull(siteId)),
+  gitPull: (
+    siteId: SiteId,
+    strategy: "fastForward" | "forceReset" = "fastForward",
+  ): Promise<GitStatus> => unwrap(commands.gitPull(siteId, strategy)),
   gitPush: (siteId: SiteId): Promise<GitStatus> =>
     unwrap(commands.gitPush(siteId)),
+  gitStashSave: (siteId: SiteId, message: string): Promise<GitStatus> =>
+    unwrap(commands.gitStashSave(siteId, message)),
+  gitStashPop: (siteId: SiteId): Promise<GitStatus> =>
+    unwrap(commands.gitStashPop(siteId)),
 };
 
 export function isAppError(value: unknown): value is AppError {

@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 
 use git2::{
     Cred, CredentialType, FetchOptions, IndexAddOption, PushOptions, RemoteCallbacks, Repository,
-    Signature, StatusOptions,
+    ResetType, Signature, StashApplyOptions, StashFlags, StatusOptions,
 };
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -355,7 +355,21 @@ pub fn clone_repo(opts: &CloneOptions) -> AppResult<CloneResult> {
     })
 }
 
-pub fn pull(repo_path: &Path) -> AppResult<()> {
+/// How to resolve a non-fast-forward situation when pulling.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum PullStrategy {
+    /// Refuse to pull anything that isn't a clean fast-forward — the
+    /// safe default. The UI surfaces a button to retry with `ForceReset`
+    /// after explicit confirmation.
+    FastForward,
+    /// `git fetch && git reset --hard <upstream>` — local commits not in
+    /// the upstream are silently discarded. Combine with [`stash_save`]
+    /// beforehand if you also want to preserve working-tree changes.
+    ForceReset,
+}
+
+pub fn pull(repo_path: &Path, strategy: PullStrategy) -> AppResult<()> {
     let repo = open(repo_path)?;
     let head = repo.head().map_err(map_git_err)?;
     let branch_name = head
@@ -393,13 +407,23 @@ pub fn pull(repo_path: &Path) -> AppResult<()> {
         .fetch::<&str>(&[], Some(&mut fetch), None)
         .map_err(map_git_err)?;
 
-    // Fast-forward if possible; otherwise refuse and tell the UI.
     let upstream_ann = repo
         .find_reference(&upstream_full)
         .map_err(map_git_err)?
         .peel(git2::ObjectType::Commit)
         .map_err(map_git_err)?;
     let upstream_oid = upstream_ann.id();
+
+    if strategy == PullStrategy::ForceReset {
+        // Hard-reset to upstream. Working tree + index are wiped along
+        // with any local-only commits — the caller is expected to have
+        // stashed first if they wanted to keep uncommitted changes.
+        let upstream_obj = repo.find_object(upstream_oid, None).map_err(map_git_err)?;
+        repo.reset(&upstream_obj, ResetType::Hard, None)
+            .map_err(map_git_err)?;
+        return Ok(());
+    }
+
     let analysis = repo
         .merge_analysis(&[&repo
             .find_annotated_commit(upstream_oid)
@@ -420,8 +444,29 @@ pub fn pull(repo_path: &Path) -> AppResult<()> {
         return Ok(());
     }
     Err(AppError::Internal(
-        "non-fast-forward pull requires manual merge — resolve from the terminal".into(),
+        "non-fast-forward pull — try Force pull (will reset to upstream and discard local commits)"
+            .into(),
     ))
+}
+
+/// Stash both staged and unstaged changes. Returns the stash OID.
+/// `message` is recorded in the stash log so the user can identify it
+/// later from the terminal if they want to inspect it.
+pub fn stash_save(repo_path: &Path, message: &str) -> AppResult<String> {
+    let mut repo = open(repo_path)?;
+    let signature = build_signature(&repo)?;
+    let oid = repo
+        .stash_save2(&signature, Some(message), Some(StashFlags::DEFAULT))
+        .map_err(map_git_err)?;
+    Ok(oid.to_string())
+}
+
+/// Pop the most recent stash entry (index 0). Returns an Err with a
+/// readable message if there's nothing on the stash stack.
+pub fn stash_pop(repo_path: &Path) -> AppResult<()> {
+    let mut repo = open(repo_path)?;
+    let mut opts = StashApplyOptions::default();
+    repo.stash_pop(0, Some(&mut opts)).map_err(map_git_err)
 }
 
 pub fn push(repo_path: &Path) -> AppResult<()> {
