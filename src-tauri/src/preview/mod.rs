@@ -92,8 +92,15 @@ impl PreviewProcess {
 /// Spawn `hugo server` for `site_root`. Resolves to the chosen URL/port
 /// once the OS binds the port; the actual "Hugo is ready to serve"
 /// signal arrives later as the [`READY_EVENT`].
-pub async fn start(app: AppHandle, site_root: PathBuf) -> AppResult<PreviewProcess> {
-    let hugo_path = locate_hugo()?;
+///
+/// `hugo_override` is the user-configured path from app settings; when
+/// `None` we fall back to the env var → PATH chain inside `locate_hugo`.
+pub async fn start(
+    app: AppHandle,
+    site_root: PathBuf,
+    hugo_override: Option<String>,
+) -> AppResult<PreviewProcess> {
+    let hugo_path = locate_hugo(hugo_override.as_deref())?;
     let port = pick_free_port()?;
     let url = format!("http://127.0.0.1:{port}/");
 
@@ -224,9 +231,19 @@ fn spawn_pump<R>(
 }
 
 /// Find the Hugo binary. Order:
-/// 1. `HUGO_STUDIO_HUGO_PATH` env var (absolute path to a binary)
-/// 2. `which hugo` on the user's `PATH`
-pub fn locate_hugo() -> AppResult<PathBuf> {
+/// 1. `override_path` (set by the user from the Settings dialog)
+/// 2. `HUGO_STUDIO_HUGO_PATH` env var (absolute path to a binary)
+/// 3. `which hugo` on the user's `PATH`
+pub fn locate_hugo(override_path: Option<&str>) -> AppResult<PathBuf> {
+    if let Some(p) = override_path.filter(|s| !s.is_empty()) {
+        let pb = PathBuf::from(p);
+        if pb.is_file() {
+            return Ok(pb);
+        }
+        return Err(AppError::HugoBinary(format!(
+            "configured Hugo path {p} is not a file"
+        )));
+    }
     if let Ok(env_path) = std::env::var("HUGO_STUDIO_HUGO_PATH") {
         let p = PathBuf::from(env_path);
         if p.is_file() {
@@ -239,7 +256,7 @@ pub fn locate_hugo() -> AppResult<PathBuf> {
     }
     which::which("hugo").map_err(|e| {
         AppError::HugoBinary(format!(
-            "`hugo` not found on PATH ({e}); install Hugo or set HUGO_STUDIO_HUGO_PATH"
+            "`hugo` not found on PATH ({e}); install Hugo, set HUGO_STUDIO_HUGO_PATH, or pick a binary from the Settings dialog"
         ))
     })
 }
@@ -335,7 +352,7 @@ mod tests {
     #[test]
     fn locate_hugo_via_env_var_rejects_missing_file() {
         let _g = EnvGuard::set("HUGO_STUDIO_HUGO_PATH", "/definitely/not/here");
-        let err = locate_hugo().unwrap_err();
+        let err = locate_hugo(None).unwrap_err();
         match err {
             AppError::HugoBinary(msg) => assert!(msg.contains("not a file")),
             other => panic!("expected HugoBinary, got {other:?}"),

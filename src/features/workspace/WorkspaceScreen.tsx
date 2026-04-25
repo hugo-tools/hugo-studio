@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FolderPlus, GitBranch } from "lucide-react";
+import { FolderPlus, GitBranch, Settings as SettingsIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { tauri, type SiteRef } from "@/lib/tauri";
 import { ThemeToggle } from "@/features/theme-mode/ThemeToggle";
 import { CloneDialog } from "@/features/git/CloneDialog";
+import { SettingsDialog } from "@/features/settings/SettingsDialog";
 import { AddSiteButton } from "./AddSiteButton";
 import { SiteCard } from "./SiteCard";
 
 export function WorkspaceScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [cloneOpen, setCloneOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const sites = useQuery<SiteRef[]>({
     queryKey: ["sites"],
@@ -30,6 +32,16 @@ export function WorkspaceScreen() {
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            title="Settings"
+          >
+            <SettingsIcon className="size-4" />
+          </Button>
           <Button
             variant="outline"
             onClick={() => setCloneOpen(true)}
@@ -79,6 +91,7 @@ export function WorkspaceScreen() {
       </main>
 
       <CloneDialog open={cloneOpen} onOpenChange={setCloneOpen} />
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 }

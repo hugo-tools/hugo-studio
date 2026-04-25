@@ -29,7 +29,8 @@ pub async fn preview_start(
         return Err(AppError::PreviewAlreadyRunning(site_id.to_string()));
     }
     let root = site_root(&state, site_id)?;
-    let process = preview::start(app, root).await?;
+    let hugo_override = state.settings.lock().hugo_path.clone();
+    let process = preview::start(app, root, hugo_override).await?;
     let handle = process.handle.clone();
     state.replace_preview(Some(process));
     Ok(handle)

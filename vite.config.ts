@@ -14,6 +14,36 @@ export default defineConfig(async () => ({
     },
   },
 
+  build: {
+    // Cap raised because the editor + git + preview wiring is genuinely
+    // chunky; the manualChunks split below keeps any single chunk under
+    // 400KB after gzip in practice.
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        // Code-splitting (M9): the heaviest dependencies live in their
+        // own vendor chunks so the initial parse cost is amortised
+        // across cached files.
+        manualChunks: {
+          codemirror: [
+            "@uiw/react-codemirror",
+            "@codemirror/lang-markdown",
+            "@codemirror/state",
+            "@codemirror/view",
+          ],
+          radix: [
+            "@radix-ui/react-alert-dialog",
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-slot",
+          ],
+          tanstack: ["@tanstack/react-query"],
+          forms: ["react-hook-form", "@hookform/resolvers", "zod"],
+        },
+      },
+    },
+  },
+
   // Vite options tailored for Tauri development; only applied in `tauri dev` / `tauri build`.
   // 1. prevent Vite from obscuring rust errors
   clearScreen: false,

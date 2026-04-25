@@ -2,6 +2,7 @@ use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri::Manager;
 use tauri_specta::{collect_commands, Builder};
 
+pub mod app;
 pub mod assets;
 pub mod commands;
 pub mod config;
@@ -16,6 +17,7 @@ pub mod state;
 pub mod theme;
 pub mod watcher;
 
+use crate::app::settings::SettingsStore;
 use crate::persistence::workspace_store::WorkspaceStore;
 use crate::state::AppState;
 
@@ -26,6 +28,9 @@ use crate::state::AppState;
 /// drifts from what's actually registered.
 pub fn make_specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new().commands(collect_commands![
+        commands::app::app_settings_get,
+        commands::app::app_settings_resolve_hugo,
+        commands::app::app_settings_save,
         commands::assets::asset_delete,
         commands::assets::asset_import,
         commands::assets::asset_list,
@@ -102,9 +107,9 @@ fn try_run() -> Result<(), Box<dyn std::error::Error>> {
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             let app_data_dir = app.path().app_data_dir()?;
-            let workspace_path = app_data_dir.join("workspace.json");
-            let store = WorkspaceStore::new(workspace_path);
-            app.manage(AppState::new(store));
+            let workspace_store = WorkspaceStore::new(app_data_dir.join("workspace.json"));
+            let settings_store = SettingsStore::new(app_data_dir.join("settings.json"));
+            app.manage(AppState::new(workspace_store, settings_store));
             builder.mount_events(app);
             Ok(())
         })

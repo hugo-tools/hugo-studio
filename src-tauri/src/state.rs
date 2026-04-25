@@ -1,5 +1,6 @@
 use parking_lot::Mutex;
 
+use crate::app::settings::{AppSettings, SettingsStore};
 use crate::domain::workspace::Workspace;
 use crate::error::AppResult;
 use crate::persistence::workspace_store::WorkspaceStore;
@@ -8,16 +9,18 @@ use crate::watcher::WatcherHandle;
 
 /// Tauri-managed state. Holds the in-memory workspace behind a non-poisoning
 /// mutex (parking_lot), the on-disk store used to persist it, the file
-/// watcher and the live-preview process.
+/// watcher, the live-preview process and the app-level settings.
 pub struct AppState {
     pub workspace: Mutex<Workspace>,
     pub workspace_store: WorkspaceStore,
+    pub settings: Mutex<AppSettings>,
+    pub settings_store: SettingsStore,
     pub active_watcher: Mutex<Option<WatcherHandle>>,
     pub active_preview: Mutex<Option<PreviewProcess>>,
 }
 
 impl AppState {
-    pub fn new(workspace_store: WorkspaceStore) -> Self {
+    pub fn new(workspace_store: WorkspaceStore, settings_store: SettingsStore) -> Self {
         let workspace = workspace_store.load().unwrap_or_else(|err| {
             eprintln!(
                 "[hugo-studio] failed to load workspace from {}: {err} — starting empty",
@@ -25,9 +28,18 @@ impl AppState {
             );
             Workspace::default()
         });
+        let settings = settings_store.load().unwrap_or_else(|err| {
+            eprintln!(
+                "[hugo-studio] failed to load settings from {}: {err} — using defaults",
+                settings_store.path().display()
+            );
+            AppSettings::default()
+        });
         Self {
             workspace: Mutex::new(workspace),
             workspace_store,
+            settings: Mutex::new(settings),
+            settings_store,
             active_watcher: Mutex::new(None),
             active_preview: Mutex::new(None),
         }
@@ -38,6 +50,11 @@ impl AppState {
     pub fn save(&self) -> AppResult<()> {
         let snapshot = self.workspace.lock().clone();
         self.workspace_store.save(&snapshot)
+    }
+
+    pub fn save_settings(&self) -> AppResult<()> {
+        let snapshot = self.settings.lock().clone();
+        self.settings_store.save(&snapshot)
     }
 
     /// Replace the active watcher (if any) with `next`. The previous one is

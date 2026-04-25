@@ -8,6 +8,35 @@
 
 
 export const commands = {
+async appSettingsGet() : Promise<Result<AppSettings, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("app_settings_get") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Echo back the path Hugo Studio would actually use right now (resolved
+ * override → env var → PATH). Returns `None` when nothing is reachable —
+ * the SettingsDialog uses this to render a green/red status hint.
+ */
+async appSettingsResolveHugo() : Promise<Result<string | null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("app_settings_resolve_hugo") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async appSettingsSave(next: AppSettings) : Promise<Result<AppSettings, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("app_settings_save", { next }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async assetDelete(siteId: SiteId, assetId: string) : Promise<Result<null, AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("asset_delete", { siteId, assetId }) };
@@ -290,6 +319,14 @@ async workspaceSetActive(id: SiteId) : Promise<Result<Site, AppError>> {
  * TypeScript side can switch on `kind` without parsing free-form strings.
  */
 export type AppError = { kind: "not_a_hugo_site"; message: string } | { kind: "site_not_found"; message: string } | { kind: "not_a_directory"; message: string } | { kind: "path_traversal"; message: string } | { kind: "io"; message: string } | { kind: "serde"; message: string } | { kind: "internal"; message: string } | { kind: "hugo_binary"; message: string } | { kind: "preview_already_running"; message: string } | { kind: "no_preview_running" }
+export type AppSettings = { 
+/**
+ * Absolute path to a Hugo binary the user wants the preview to use
+ * instead of the one on PATH. `None` falls back to
+ * `HUGO_STUDIO_HUGO_PATH` env var → PATH lookup (see
+ * `preview::locate_hugo`).
+ */
+hugoPath: string | null }
 export type Archetype = { 
 /**
  * User-facing name = stem of the archetype file or directory.

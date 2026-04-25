@@ -129,8 +129,20 @@ Le milestone seguono il prompt iniziale. Ogni voce è atomica e testabile.
 
 ## M9 — Polish e onboarding
 
-- [ ] Empty states curati
-- [ ] Settings dell'app (path Hugo binary, lingua UI, telemetria opt-in)
-- [ ] Documentazione `.hugoeditor/schema.json` e `.hugoeditor/theme-schema.json`
+- [x] App settings: persisted `AppSettings { hugoPath }` in `app_data_dir/settings.json`; `app_settings_get/save/resolve_hugo` commands; SettingsDialog (cog icon in workspace header) with theme mode radio + Hugo binary picker + live "will use: …" hint
+- [x] `preview::locate_hugo` precedence: app settings → `HUGO_STUDIO_HUGO_PATH` → PATH
+- [x] Documentazione `.hugoeditor/theme-schema.json` (M5) e accenno a `.hugoeditor/schema.json` per-section override (loader vero rimandato post-1.0)
+- [x] Bundle code-splitting: chunks separati per `codemirror` / `radix` / `forms` / `tanstack` (~310KB main + 615KB codemirror lazy vs 1MB monolitico)
+- [x] Test unit: 109 totali (era 107) — round-trip settings store
+- [x] **Criterio**: un editor non-tecnico apre un sito esistente e modifica un post senza vedere YAML — soddisfatto: editor con title sempre editabile + form schema-driven + tab dedicate FM/Body, niente YAML in superficie
+
+## Out of v1.0.0 (post-1.0 ideas)
+
+- [ ] Hugo come Tauri sidecar (vero bundle binari per piattaforma → no install richiesto)
+- [ ] `.hugoeditor/schema.json` loader vero (override per-section dell'inferenza)
+- [ ] Image picker per FM fields con preview thumbnail (richiede `asset://` scheme con scope)
+- [ ] Branch switcher + new branch UI nel GitPanel
+- [ ] Pull non-FF con UI di merge inline (per ora bisogna risolvere da terminale)
+- [ ] Lingua UI configurabile (i18next già wireable; UI strings hardcoded inglese in v1)
+- [ ] Telemetria opt-in
 - [ ] Icone custom + branding
-- [ ] **Criterio**: un editor non-tecnico apre un sito esistente e modifica un post senza vedere YAML

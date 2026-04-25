@@ -6,6 +6,7 @@
 import { commands, type Result } from "./bindings";
 import type {
   AppError,
+  AppSettings,
   Archetype,
   AssetContext,
   AssetRef,
@@ -111,6 +112,11 @@ export const tauri = {
     unwrap(commands.gitStashSave(siteId, message)),
   gitStashPop: (siteId: SiteId): Promise<GitStatus> =>
     unwrap(commands.gitStashPop(siteId)),
+  appSettingsGet: (): Promise<AppSettings> => unwrap(commands.appSettingsGet()),
+  appSettingsSave: (next: AppSettings): Promise<AppSettings> =>
+    unwrap(commands.appSettingsSave(next)),
+  appSettingsResolveHugo: (): Promise<string | null> =>
+    unwrap(commands.appSettingsResolveHugo()),
 };
 
 export function isAppError(value: unknown): value is AppError {

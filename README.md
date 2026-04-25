@@ -1,7 +1,8 @@
 # Hugo Studio
 
 A desktop multi-site editor for [Hugo](https://gohugo.io/), built with Tauri 2 and React.
-Status: **M6 (live preview)**. The full milestone plan lives in [`ROADMAP.md`](./ROADMAP.md).
+Status: **v1.0.0** — all original milestones (M0 → M9) plus a git-integration
+interlude have shipped. The full milestone plan lives in [`ROADMAP.md`](./ROADMAP.md).
 
 Hugo Studio targets non-technical content editors: it hides YAML/TOML/JSON behind
 schema-driven forms while preserving the original on-disk file format byte-for-byte
@@ -22,6 +23,14 @@ when you save (comments, key order, indentation — all kept).
   (chip-style tag autocomplete from the rest of the section).
 - **Live preview** powered by an embedded `hugo server` (kill-on-drop, no zombie
   processes), iframe pane, collapsible Hugo console.
+- **New-content wizard** with title-derived slug, archetype dropdown
+  (sections / default / built-in fallback), language picker for
+  multilingual sites.
+- **Git from the UI**: clone, status, stage / unstage, commit, pull,
+  push, stash, force pull. Vendored libgit2 — no system git required
+  (except for HTTPS credential helper).
+- **Dark mode** (system / light / dark) plus app settings dialog with
+  Hugo binary picker.
 
 ## Development
 
@@ -115,17 +124,46 @@ Without a manifest, Hugo Studio falls back to reading `[params]` from
 (badge `Theme defaults`); failing that it infers types from the params currently
 set in the site (badge `Inferred`).
 
+## For site authors: `.hugoeditor/schema.json` (per-section override)
+
+The same shape works **per content section** to override what Hugo Studio
+infers from existing posts. Drop a file at
+`<site>/.hugoeditor/schema.json` and the editor will use it instead of
+the inferred schema for matching sections.
+
+Reserved for v1.x — currently the schema is always inferred. Until the
+override loader lands you can still control the form by:
+
+1. naming a custom front-matter field clearly (the editor labels it from
+   the key, title-cased), and
+2. filling at least one post with a representative value so the type
+   inference latches onto it (a tag in any item turns the field into a
+   chip input on every other item in the same section).
+
 ## Live preview prerequisites
 
-The preview pane spawns `hugo server` against the active site. Hugo must be
-discoverable in one of two ways:
+The preview pane spawns `hugo server` against the active site. Hugo can be
+provided in three ways, in priority order:
 
-- on the user's `PATH` (recommended, install
-  [hugo extended](https://gohugo.io/installation/) ≥ 0.130), **or**
-- pointed to via the `HUGO_STUDIO_HUGO_PATH` environment variable (absolute
-  path to a `hugo` binary).
+1. **App settings** → open the cog icon in the workspace header and pick
+   the `hugo` binary explicitly. Persisted in
+   `app_data_dir/settings.json`. Survives restarts.
+2. **`HUGO_STUDIO_HUGO_PATH`** environment variable (absolute path to a
+   binary). Useful for CI / container set-ups.
+3. **`PATH`** lookup of `hugo` (default; install
+   [hugo extended](https://gohugo.io/installation/) ≥ 0.130).
 
-Bundling Hugo as a Tauri sidecar is on the roadmap (M9 polish).
+Quick installs:
+
+- macOS: `brew install hugo`
+- Windows: `scoop install hugo-extended`
+- Linux (Debian/Ubuntu): grab the `_extended_*.deb` from the
+  [Hugo releases page](https://github.com/gohugoio/hugo/releases).
+
+Use the **extended** build — Hugo Studio's preview path exercises SCSS
+and image processing that aren't in the regular distribution.
+
+Bundling Hugo as a Tauri sidecar is on the post-1.0 roadmap.
 
 ## Releases
 
