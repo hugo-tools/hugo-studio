@@ -19,6 +19,7 @@ import {
   type Site,
 } from "@/lib/tauri";
 import { cn } from "@/lib/utils";
+import { useWorkspaceStore } from "@/store/workspace";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { buildTree, type TreeNode } from "./buildTree";
 
@@ -145,9 +146,27 @@ function TreeRow({
   depth?: number;
 }) {
   const [open, setOpen] = useState(depth < 1);
+  const selectContent = useWorkspaceStore((s) => s.selectContent);
+  const selectedPath = useWorkspaceStore((s) => s.selection?.path);
   const item = node.item;
   const isFolder = item.kind !== "singlePage";
+  const isEditableBundle =
+    item.kind === "branchBundle" || item.kind === "leafBundle";
+  const isEditable = item.kind === "singlePage" || isEditableBundle;
   const Icon = iconFor(item.kind, open);
+  const isSelected = selectedPath === item.path;
+
+  function handleClick() {
+    if (isEditable) {
+      selectContent({
+        path: item.path,
+        id: item.id,
+        language: item.language,
+        title: item.title,
+      });
+    }
+    if (isFolder) setOpen((v) => !v);
+  }
 
   const otherLangs =
     allLangs.length > 1
@@ -166,10 +185,11 @@ function TreeRow({
     <li>
       <button
         type="button"
-        onClick={() => isFolder && setOpen((v) => !v)}
+        onClick={handleClick}
         className={cn(
           "group flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-sm transition-colors hover:bg-muted",
           item.draft && "italic text-muted-foreground",
+          isSelected && "bg-accent text-accent-foreground hover:bg-accent",
         )}
         style={{ paddingLeft: `${depth * 12 + 6}px` }}
       >

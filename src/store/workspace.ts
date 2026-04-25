@@ -2,9 +2,22 @@ import { create } from "zustand";
 
 import type { Site } from "@/lib/tauri";
 
+export interface EditorSelection {
+  /** Absolute path of the file on disk — passed to content_get / save. */
+  path: string;
+  /** Stable id from ContentSummary (path-rel, no language suffix). */
+  id: string;
+  language: string;
+  /** Cached title for header display before content_get arrives. */
+  title?: string | null;
+}
+
 interface WorkspaceState {
   activeSite: Site | null;
   setActiveSite: (site: Site | null) => void;
+  /** When set, SiteShell shows the editor instead of the settings panel. */
+  selection: EditorSelection | null;
+  selectContent: (sel: EditorSelection | null) => void;
 }
 
 /**
@@ -15,5 +28,12 @@ interface WorkspaceState {
  */
 export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   activeSite: null,
-  setActiveSite: (site) => set({ activeSite: site }),
+  setActiveSite: (site) =>
+    set({
+      activeSite: site,
+      // Switching site clears any in-progress editor selection.
+      selection: null,
+    }),
+  selection: null,
+  selectContent: (sel) => set({ selection: sel }),
 }));

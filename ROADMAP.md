@@ -53,12 +53,19 @@ Le milestone seguono il prompt iniziale. Ogni voce è atomica e testabile.
 
 ## M4 — Editor di contenuto (cuore del prodotto)
 
-- [ ] Schema inference del front matter (campi standard Hugo + custom inferred + override `.hugoeditor/schema.json`)
-- [ ] Form renderer da schema → componenti shadcn/ui
-- [ ] Body editor CodeMirror 6 con highlight markdown e preview side-by-side
-- [ ] Layout split: tree | form+body | preview placeholder
-- [ ] Save con preservazione formato
-- [ ] **Criterio**: modifica title/tags/draft + body → diff = solo le modifiche; tags con autocomplete
+- [x] Document codec: split FM/body con preservazione layout (CRLF/LF, BOM, blank lines), riusa i `ConfigCodec` di M2 sul blocco FM (TOML full preservation, YAML line-patching scalari, JSON preserve_order)
+- [x] Save atomico (tmp + rename), early-return byte-identical quando il file non è davvero cambiato
+- [x] Schema inference: 21 campi standard Hugo curati con tipi nativi (Basic / Taxonomy / Routing / Schedule / Order / Rendering) + inferenza dei campi custom dalla section + autocomplete enumValues per Tags/StringArray
+- [x] Comandi `content_get` / `content_save` con sandbox `resolve_under_root` (PathTraversal vivo) e detection automatica della section anche per strategia Directory (xx / xx-yy)
+- [x] FrontMatterForm schema-driven: string/text/number/boolean/date/dateTime/tags/stringArray/json — raggruppato per `group`
+- [x] TagsInput chip-style con suggestion list, navigabile da tastiera (↑/↓/Enter/Tab), backspace toglie l'ultima
+- [x] BodyEditor CodeMirror 6 con `@codemirror/lang-markdown` + line-wrapping, riempie il pane
+- [x] EditorView: split form|body, dirty tracking, Save flash, X chiude la selezione (torna alla settings)
+- [x] Click sul tree apre l'editor; il riquadro destro alterna Settings ↔ Editor in base a `selection`
+- [x] Test unit: 68 totali (era 53) — 9 round-trip nuovi su `document.rs` (Yaml/Toml/Json + body-only + CRLF + BOM) e 4 su `schema.rs` (standard fields, classify, humanise, inference + tag autocomplete) + sandbox top_section
+- [ ] Override `.hugoeditor/schema.json`: rimandato (M9 polish — scelta architetturale: l'inferenza copre il 90% dei casi senza chiedere lavoro agli autori dei temi)
+- [ ] Side-by-side preview del Markdown renderizzato: rimandato a M6 quando arriva `hugo server` (sarà la stessa cosa, gratis)
+- [ ] **Criterio**: modifica title/tags/draft + body → diff = solo le modifiche; tags con autocomplete (validato dai test sul codec; verifica visiva sull'app reale ancora da fare)
 
 ## M5 — Theme params editor
 

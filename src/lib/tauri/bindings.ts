@@ -24,9 +24,25 @@ async configSave(siteId: SiteId, merged: JsonValue) : Promise<Result<LoadedConfi
     else return { status: "error", error: e  as any };
 }
 },
+async contentGet(siteId: SiteId, path: string) : Promise<Result<ContentEditPayload, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("content_get", { siteId, path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async contentList(siteId: SiteId) : Promise<Result<ContentScanResult, AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("content_list", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async contentSave(siteId: SiteId, path: string, frontMatter: JsonValue, body: string) : Promise<Result<ContentEditPayload, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("content_save", { siteId, path, frontMatter, body }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -133,6 +149,12 @@ export type ConfigSource = { path: string; format: ConfigFormat;
  * `hugo.{toml,yaml,json}` case).
  */
 mountKey: string | null }
+export type ContentEditPayload = { format: FrontMatterFormat; frontMatter: JsonValue; body: string; schema: FrontMatterSchema; 
+/**
+ * Absolute path of the file the editor is acting on. Surfaced so the
+ * UI can show a "reveal in finder" affordance later.
+ */
+path: string }
 /**
  * Hugo's three structural content kinds, plus the synthetic `Section`
  * for directories that contain content but no `_index.*`.
@@ -164,6 +186,24 @@ export type DetectionInfo = { kind: HugoConfigKind;
  * `config/_default/` directory (DefaultDirectory).
  */
 configPath: string }
+export type FieldDef = { key: string; label: string; fieldType: FieldType; required: boolean; default: JsonValue | null; enumValues: string[] | null; group: string | null; hidden: boolean; description: string | null }
+export type FieldType = "string" | "text" | "number" | "boolean" | "date" | "dateTime" | 
+/**
+ * `Array<String>` rendered as a chip-style input. Combined with
+ * `enum_values` for autocomplete.
+ */
+"tags" | 
+/**
+ * `Array<String>` without autocomplete (e.g. `aliases`).
+ */
+"stringArray" | 
+/**
+ * Catch-all for nested objects, arrays of objects, mixed-type
+ * arrays, and unknown shapes — edited as raw JSON.
+ */
+"json"
+export type FrontMatterFormat = "toml" | "yaml" | "json"
+export type FrontMatterSchema = { fields: FieldDef[]; unknownFieldsPolicy: UnknownFieldsPolicy }
 export type HealthStatus = { status: string; version: string }
 /**
  * Which kind of config layout was found in the site root.
@@ -203,6 +243,7 @@ export type SiteId = string
  * (config, theme, languages…) is only built when a site is opened.
  */
 export type SiteRef = { id: SiteId; name: string; rootPath: string; lastOpened: string }
+export type UnknownFieldsPolicy = "preserve" | "warn" | "strip"
 
 /** tauri-specta globals **/
 

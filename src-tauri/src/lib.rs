@@ -24,7 +24,9 @@ pub fn make_specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new().commands(collect_commands![
         commands::config::config_get,
         commands::config::config_save,
+        commands::content::content_get,
         commands::content::content_list,
+        commands::content::content_save,
         commands::health_check::health_check,
         commands::site::site_detect,
         commands::workspace::workspace_active_site_id,

@@ -3,6 +3,8 @@
 //! ContentItem with body + form-renderable front-matter schema lands in M4.
 
 pub mod classify;
+pub mod document;
 pub mod frontmatter;
 pub mod language;
 pub mod scan;
+pub mod schema;
