@@ -5,7 +5,7 @@ use std::time::Duration;
 use notify::{recommended_watcher, RecursiveMode, Watcher};
 use serde::Serialize;
 use specta::Type;
-use tauri::{AppHandle, Emitter};
+use tauri::{async_runtime, AppHandle, Emitter};
 use tokio::sync::mpsc as tokio_mpsc;
 
 use crate::error::{AppError, AppResult};
@@ -51,7 +51,14 @@ pub fn spawn(app: AppHandle, root: PathBuf) -> AppResult<WatcherHandle> {
         .map_err(|e| AppError::Internal(format!("notify watch: {e}")))?;
 
     let watch_root = root.clone();
-    tokio::spawn(async move {
+    // Use Tauri's managed tokio runtime instead of `tokio::spawn` directly:
+    // `workspace_set_active` is a *sync* command, so when Tauri invokes it
+    // there is no current tokio runtime in the calling thread context. A
+    // bare `tokio::spawn` would panic ("there is no reactor running") and
+    // the panic handler would `abort()` the whole app — exactly what
+    // happened on macOS in v0.5.0 when opening a site. `async_runtime::spawn`
+    // delegates to the runtime Tauri owns, which is always available.
+    async_runtime::spawn(async move {
         // Keep the watcher alive for the lifetime of this task.
         let _watcher_keep_alive = watcher;
         let mut pending: Vec<String> = Vec::new();
