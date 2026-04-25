@@ -1,0 +1,30 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.dev
+    image: hugo-studio-dev:latest
+    container_name: hugo-studio-dev
+    working_dir: /workspace
+    environment:
+      # Vite needs to bind 0.0.0.0 to be reachable from host.
+      HOST: 0.0.0.0
+    volumes:
+      - ./:/workspace
+      # Volumi nominati per cache/artefatti che NON devono finire sull'host.
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - target-cache:/workspace/src-tauri/target
+      - node-modules:/workspace/node_modules
+    ports:
+      - "1420:1420" # Vite dev server (default Tauri)
+      - "1421:1421" # Tauri devtools / spare
+    stdin_open: true
+    tty: true
+    command: bash
+
+volumes:
+  cargo-registry:
+  cargo-git:
+  target-cache:
+  node-modules:
