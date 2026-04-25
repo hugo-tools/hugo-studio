@@ -81,11 +81,18 @@ Le milestone seguono il prompt iniziale. Ogni voce è atomica e testabile.
 
 ## M6 — Live preview
 
-- [ ] Hugo bundlato come Tauri sidecar (>= 0.130 extended) + fallback system binary
-- [ ] Spawn/kill di `hugo server` con porta libera + `kill_on_drop`
-- [ ] WebView panel + auto-navigate
-- [ ] Console panel collassabile per i log Hugo
-- [ ] **Criterio**: refresh <1s; nessun processo Hugo zombie alla chiusura
+- [x] Locate Hugo via `HUGO_STUDIO_HUGO_PATH` → `which::which("hugo")` (sidecar bundlato vero rimandato a M9; documentato nel placeholder dell'UI)
+- [x] Spawn `hugo server -D --bind 127.0.0.1 --port <free> --navigateToChanged --disableFastRender --source <root>` con `tokio::process` e `Child::kill_on_drop(true)` — niente zombi anche se l'app crasha
+- [x] Pump stdout/stderr line-by-line; tail in memoria 50 righe per arricchire `preview:error`
+- [x] Eventi Tauri `preview:log` / `preview:ready` / `preview:error` / `preview:exited`
+- [x] Lifecycle agganciato a `workspace_set_active` / `workspace_clear_active` (e in M3 dropping `replace_preview` ferma il vecchio prima di partire il nuovo)
+- [x] Comandi `preview_start` (async) / `preview_stop` / `preview_status`
+- [x] WebView pane con iframe sull'URL ricevuto + reload button + status dot (idle / starting / running / error)
+- [x] Console collassabile (cap 500 righe, auto-scroll bottom-aware, clear button)
+- [x] SiteShell layout 3-colonne `[280px tree | 1fr center | minmax(380px,1fr) preview]` quando preview aperta
+- [x] Hugo extended in dev Docker image (build/test in container)
+- [x] Test unit: 79 totali (era 74) — parse "Web Server is available at" (3 forme), pick_free_port, locate_hugo via env var, EnvGuard helper
+- [ ] **Criterio**: refresh <1s; nessun processo Hugo zombie alla chiusura (validato dai test e da `kill_on_drop`; verifica visiva richiede l'app reale + Hugo sul host)
 
 ## M7 — Asset management
 

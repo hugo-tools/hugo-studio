@@ -9,6 +9,7 @@ pub mod domain;
 pub mod error;
 pub mod hugo;
 pub mod persistence;
+pub mod preview;
 pub mod state;
 pub mod theme;
 pub mod watcher;
@@ -29,6 +30,9 @@ pub fn make_specta_builder() -> Builder<tauri::Wry> {
         commands::content::content_list,
         commands::content::content_save,
         commands::health_check::health_check,
+        commands::preview::preview_start,
+        commands::preview::preview_status,
+        commands::preview::preview_stop,
         commands::site::site_detect,
         commands::theme::theme_get,
         commands::theme::theme_save_params,

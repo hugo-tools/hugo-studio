@@ -3,15 +3,17 @@ use parking_lot::Mutex;
 use crate::domain::workspace::Workspace;
 use crate::error::AppResult;
 use crate::persistence::workspace_store::WorkspaceStore;
+use crate::preview::PreviewProcess;
 use crate::watcher::WatcherHandle;
 
 /// Tauri-managed state. Holds the in-memory workspace behind a non-poisoning
-/// mutex (parking_lot), the on-disk store used to persist it, and the
-/// currently-active filesystem watcher (if any).
+/// mutex (parking_lot), the on-disk store used to persist it, the file
+/// watcher and the live-preview process.
 pub struct AppState {
     pub workspace: Mutex<Workspace>,
     pub workspace_store: WorkspaceStore,
     pub active_watcher: Mutex<Option<WatcherHandle>>,
+    pub active_preview: Mutex<Option<PreviewProcess>>,
 }
 
 impl AppState {
@@ -27,6 +29,7 @@ impl AppState {
             workspace: Mutex::new(workspace),
             workspace_store,
             active_watcher: Mutex::new(None),
+            active_preview: Mutex::new(None),
         }
     }
 
@@ -43,6 +46,16 @@ impl AppState {
         let prev = std::mem::replace(&mut *self.active_watcher.lock(), next);
         if let Some(handle) = prev {
             handle.stop();
+        }
+    }
+
+    /// Replace the live-preview process. The previous one is gracefully
+    /// killed (tokio::process::Command was spawned with kill_on_drop, so the
+    /// child dies even if we forget to stop explicitly).
+    pub fn replace_preview(&self, next: Option<PreviewProcess>) {
+        let prev = std::mem::replace(&mut *self.active_preview.lock(), next);
+        if let Some(p) = prev {
+            p.stop();
         }
     }
 }

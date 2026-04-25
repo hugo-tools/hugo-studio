@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +8,7 @@ import { describeError, tauri, type Site } from "@/lib/tauri";
 import { useWorkspaceStore } from "@/store/workspace";
 import { ContentTree } from "@/features/content-tree/ContentTree";
 import { EditorView } from "@/features/editor/EditorView";
+import { PreviewPane } from "@/features/preview/PreviewPane";
 import { SiteSettingsPanel } from "@/features/site-settings/SiteSettingsPanel";
 import { ThemeSettingsPanel } from "@/features/theme-settings/ThemeSettingsPanel";
 
@@ -29,6 +31,10 @@ export function SiteShell({ site }: Props) {
   const setActiveSite = useWorkspaceStore((s) => s.setActiveSite);
   const selection = useWorkspaceStore((s) => s.selection);
   const clearSelection = useWorkspaceStore((s) => s.selectContent);
+  // Preview pane visibility is per-window UI state — the lifecycle of the
+  // hugo process itself lives in the preview store and survives toggling
+  // this pane (so hiding the iframe does not kill the server).
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const back = useMutation({
     mutationFn: () => tauri.workspaceClearActive(),
@@ -38,6 +44,10 @@ export function SiteShell({ site }: Props) {
     },
     onError: (err) => alert(describeError(err)),
   });
+
+  const gridCols = previewOpen
+    ? "grid-cols-[280px_1fr_minmax(380px,1fr)]"
+    : "grid-cols-[280px_1fr]";
 
   return (
     <div className="flex h-screen flex-col">
@@ -74,18 +84,30 @@ export function SiteShell({ site }: Props) {
               Site settings
             </Button>
           )}
+          <Button
+            size="sm"
+            variant={previewOpen ? "default" : "outline"}
+            onClick={() => setPreviewOpen((v) => !v)}
+          >
+            {previewOpen ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+            Preview
+          </Button>
           <span className="rounded-full border px-3 py-1 text-xs text-muted-foreground">
             config: {KIND_LABEL[site.detection.kind]}
           </span>
         </div>
       </header>
 
-      <div className="grid flex-1 grid-cols-[280px_1fr] overflow-hidden">
+      <div className={`grid flex-1 ${gridCols} overflow-hidden`}>
         <aside className="flex h-full flex-col overflow-hidden border-r bg-muted/20">
           <ContentTree site={site} />
         </aside>
 
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-hidden border-r">
           {selection ? (
             <EditorView site={site} selection={selection} />
           ) : (
@@ -108,6 +130,12 @@ export function SiteShell({ site }: Props) {
             </Tabs>
           )}
         </main>
+
+        {previewOpen && (
+          <aside className="flex h-full flex-col overflow-hidden">
+            <PreviewPane site={site} onClose={() => setPreviewOpen(false)} />
+          </aside>
+        )}
       </div>
     </div>
   );

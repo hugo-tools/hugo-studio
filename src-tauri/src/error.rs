@@ -32,6 +32,15 @@ pub enum AppError {
 
     #[error("internal error: {0}")]
     Internal(String),
+
+    #[error("hugo binary problem: {0}")]
+    HugoBinary(String),
+
+    #[error("preview already running for site {0}")]
+    PreviewAlreadyRunning(String),
+
+    #[error("no preview running")]
+    NoPreviewRunning,
 }
 
 impl From<std::io::Error> for AppError {

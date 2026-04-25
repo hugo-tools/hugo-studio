@@ -11,6 +11,8 @@ import type {
   DetectionInfo,
   JsonValue,
   LoadedConfig,
+  PreviewHandle,
+  PreviewStatus,
   Site,
   SiteId,
   SiteRef,
@@ -60,6 +62,10 @@ export const tauri = {
     unwrap(commands.themeGet(siteId)),
   themeSaveParams: (siteId: SiteId, params: JsonValue): Promise<ThemeInfo> =>
     unwrap(commands.themeSaveParams(siteId, params)),
+  previewStart: (siteId: SiteId): Promise<PreviewHandle> =>
+    unwrap(commands.previewStart(siteId)),
+  previewStop: (): Promise<null> => unwrap(commands.previewStop()),
+  previewStatus: (): Promise<PreviewStatus> => unwrap(commands.previewStatus()),
 };
 
 export function isAppError(value: unknown): value is AppError {
@@ -72,7 +78,9 @@ export function isAppError(value: unknown): value is AppError {
 }
 
 export function describeError(value: unknown): string {
-  if (isAppError(value)) return value.message;
+  if (isAppError(value)) {
+    return "message" in value ? value.message : value.kind;
+  }
   if (value instanceof Error) return value.message;
   return String(value);
 }

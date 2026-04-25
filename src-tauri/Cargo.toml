@@ -1,6 +1,6 @@
 [package]
 name = "hugo-studio"
-version = "0.5.1"
+version = "0.6.0"
 description = "Hugo Studio — desktop editor for Hugo sites"
 authors = ["Hugo Studio contributors"]
 edition = "2021"
@@ -40,7 +40,8 @@ chrono = { version = "0.4", default-features = false, features = ["clock", "serd
 uuid = { version = "1", features = ["v4", "serde"] }
 parking_lot = "0.12"
 notify = "6"
-tokio = { version = "1", features = ["sync", "time", "rt", "macros"] }
+tokio = { version = "1", features = ["sync", "time", "rt", "macros", "process", "io-util"] }
+which = "6"
 
 [dev-dependencies]
 tempfile = "3"

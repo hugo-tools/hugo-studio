@@ -51,6 +51,30 @@ async contentSave(siteId: SiteId, path: string, frontMatter: JsonValue, body: st
 async healthCheck() : Promise<HealthStatus> {
     return await TAURI_INVOKE("health_check");
 },
+async previewStart(siteId: SiteId) : Promise<Result<PreviewHandle, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("preview_start", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async previewStatus() : Promise<Result<PreviewStatus, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("preview_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async previewStop() : Promise<Result<null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("preview_stop") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 /**
  * Inspect a path and report whether it's a valid Hugo site.
  * Used by the "Add site" flow to give immediate feedback in the picker.
@@ -153,7 +177,7 @@ async workspaceSetActive(id: SiteId) : Promise<Result<Site, AppError>> {
  * Serialized with a `kind` discriminator and a `message` payload so that the
  * TypeScript side can switch on `kind` without parsing free-form strings.
  */
-export type AppError = { kind: "not_a_hugo_site"; message: string } | { kind: "site_not_found"; message: string } | { kind: "not_a_directory"; message: string } | { kind: "path_traversal"; message: string } | { kind: "io"; message: string } | { kind: "serde"; message: string } | { kind: "internal"; message: string }
+export type AppError = { kind: "not_a_hugo_site"; message: string } | { kind: "site_not_found"; message: string } | { kind: "not_a_directory"; message: string } | { kind: "path_traversal"; message: string } | { kind: "io"; message: string } | { kind: "serde"; message: string } | { kind: "internal"; message: string } | { kind: "hugo_binary"; message: string } | { kind: "preview_already_running"; message: string } | { kind: "no_preview_running" }
 export type ConfigFormat = "toml" | "yaml" | "json"
 /**
  * One config source on disk plus its current parsed contents.
@@ -248,6 +272,8 @@ export type LanguageStrategy =
  * render, and the per-file mapping needed to write changes back.
  */
 export type LoadedConfig = { format: ConfigFormat; sources: ConfigSource[]; merged: JsonValue }
+export type PreviewHandle = { url: string; port: number; hugoPath: string }
+export type PreviewStatus = { running: boolean; url: string | null; port: number | null }
 export type SchemaSource = 
 /**
  * Authoritative schema shipped by the theme author at

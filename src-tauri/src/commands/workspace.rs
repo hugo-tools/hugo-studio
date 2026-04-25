@@ -136,6 +136,10 @@ pub fn workspace_set_active(
     let root = PathBuf::from(&site_ref.root_path);
     let detection = detect::detect(&root)?;
 
+    // Switching sites tears down any preview that was running for the
+    // previous one — keeping a stale hugo would point at a different tree.
+    state.replace_preview(None);
+
     // Re-arm the file watcher on the new site root so site:changed events
     // start firing for the freshly-opened site.
     let handle = watcher::spawn(app, root)?;
@@ -149,5 +153,6 @@ pub fn workspace_set_active(
 pub fn workspace_clear_active(state: State<'_, AppState>) -> AppResult<()> {
     state.workspace.lock().active_site_id = None;
     state.replace_watcher(None);
+    state.replace_preview(None);
     state.save()
 }
