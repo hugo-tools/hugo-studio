@@ -10,6 +10,7 @@ import { ContentTree } from "@/features/content-tree/ContentTree";
 import { EditorView } from "@/features/editor/EditorView";
 import { GitPanel } from "@/features/git/GitPanel";
 import { MediaLibrary } from "@/features/media/MediaLibrary";
+import { MenuEditor } from "@/features/menus/MenuEditor";
 import { PreviewPane } from "@/features/preview/PreviewPane";
 import { SiteSettingsPanel } from "@/features/site-settings/SiteSettingsPanel";
 import { ThemeSettingsPanel } from "@/features/theme-settings/ThemeSettingsPanel";
@@ -124,6 +125,7 @@ export function SiteShell({ site }: Props) {
                   <TabsTrigger value="site">Site</TabsTrigger>
                   <TabsTrigger value="theme">Theme</TabsTrigger>
                   <TabsTrigger value="media">Media</TabsTrigger>
+                  <TabsTrigger value="menus">Menus</TabsTrigger>
                   <TabsTrigger value="git">Git</TabsTrigger>
                 </TabsList>
               </div>
@@ -138,6 +140,12 @@ export function SiteShell({ site }: Props) {
                 className="mt-0 flex flex-1 flex-col overflow-hidden"
               >
                 <MediaLibrary site={site} />
+              </TabsContent>
+              <TabsContent
+                value="menus"
+                className="mt-0 flex flex-1 flex-col overflow-hidden"
+              >
+                <MenuEditor site={site} />
               </TabsContent>
               <TabsContent value="git" className="mt-0 flex-1 overflow-auto">
                 <GitPanel site={site} />
