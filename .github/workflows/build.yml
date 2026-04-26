@@ -56,6 +56,17 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+      # tauri.conf.json declares `bundle.externalBin: ["binaries/hugo"]`
+      # so tauri-build (run from src-tauri/build.rs) refuses to compile
+      # unless `binaries/hugo-<host-triple>(.exe)` exists. Stage the Hugo
+      # extended sidecar for the host triple before any cargo step. The
+      # release workflow does the same per matrix `rust-target`.
+      - name: Stage Hugo sidecar binary
+        shell: bash
+        run: |
+          triple=$(rustc -vV | sed -n 's/host: //p')
+          scripts/fetch-hugo-sidecar.sh "$triple"
+
       - name: cargo fmt
         working-directory: src-tauri
         run: cargo fmt --check
