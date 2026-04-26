@@ -151,14 +151,13 @@ export function GitPanel({ site }: Props) {
   const canPull = !!data.upstream && data.behind > 0;
 
   return (
-    // No `py-6` at the top — the panel sits flush against the
-    // SiteShell's tab triggers. Bottom padding stays so the last
-    // section doesn't kiss the edge of the scroll container.
-    <div className="space-y-6 px-6 pb-6 pt-4">
-      <header className="flex items-start justify-between gap-4">
-        <div>
+    // Same shell every panel uses: header bar pinned to the top of
+    // the tab area, content scrolls underneath. See SiteShell.
+    <div className="flex h-full flex-col">
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b px-6 py-3">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <GitBranch className="size-4 text-muted-foreground" />
+            <GitBranch className="size-4 shrink-0 text-muted-foreground" />
             <BranchPicker
               site={site}
               currentBranch={data.branch}
@@ -169,11 +168,11 @@ export function GitPanel({ site }: Props) {
               }
             />
             <span className="text-xs text-muted-foreground">↔</span>
-            <span className="font-mono text-xs text-muted-foreground">
+            <span className="truncate font-mono text-xs text-muted-foreground">
               {upstream}
             </span>
           </div>
-          <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="mt-0.5 flex items-center gap-3 text-[11px] text-muted-foreground">
             <span
               title={`${data.ahead} commit(s) on the local branch not pushed`}
             >
@@ -262,54 +261,58 @@ export function GitPanel({ site }: Props) {
         </div>
       </header>
 
-      <ChangeList
-        title="Staged"
-        items={grouped.staged}
-        empty="Nothing staged for the next commit."
-        actionLabel="Unstage"
-        onAct={(paths) => unstage.mutate(paths)}
-        busy={unstage.isPending}
-      />
-
-      <ChangeList
-        title="Working tree"
-        items={grouped.unstaged}
-        empty="No working-tree changes."
-        actionLabel="Stage"
-        onAct={(paths) => stage.mutate(paths)}
-        busy={stage.isPending}
-      />
-
-      <section>
-        <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          <GitCommit className="size-3.5" />
-          Commit
-        </h3>
-        <Input
-          type="text"
-          placeholder="Commit message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
+      <div className="flex-1 space-y-6 overflow-auto px-6 py-6">
+        <ChangeList
+          title="Staged"
+          items={grouped.staged}
+          empty="Nothing staged for the next commit."
+          actionLabel="Unstage"
+          onAct={(paths) => unstage.mutate(paths)}
+          busy={unstage.isPending}
         />
-        <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span>
-            {grouped.staged.length === 0
-              ? "Stage some changes first."
-              : `${grouped.staged.length} change(s) staged.`}
-          </span>
-          <Button
-            type="button"
-            size="sm"
-            disabled={
-              !message.trim() || grouped.staged.length === 0 || commit.isPending
-            }
-            onClick={() => commit.mutate()}
-          >
-            <GitCommit className="size-4" />
-            {commit.isPending ? "Committing…" : "Commit"}
-          </Button>
-        </div>
-      </section>
+
+        <ChangeList
+          title="Working tree"
+          items={grouped.unstaged}
+          empty="No working-tree changes."
+          actionLabel="Stage"
+          onAct={(paths) => stage.mutate(paths)}
+          busy={stage.isPending}
+        />
+
+        <section>
+          <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <GitCommit className="size-3.5" />
+            Commit
+          </h3>
+          <Input
+            type="text"
+            placeholder="Commit message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span>
+              {grouped.staged.length === 0
+                ? "Stage some changes first."
+                : `${grouped.staged.length} change(s) staged.`}
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              disabled={
+                !message.trim() ||
+                grouped.staged.length === 0 ||
+                commit.isPending
+              }
+              onClick={() => commit.mutate()}
+            >
+              <GitCommit className="size-4" />
+              {commit.isPending ? "Committing…" : "Commit"}
+            </Button>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

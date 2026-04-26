@@ -70,7 +70,7 @@ export function SiteSettingsPanel({ site }: Props) {
 
   if (config.isPending) {
     return (
-      <p className="px-6 py-10 text-sm text-muted-foreground">
+      <p className="px-6 pb-10 pt-4 text-sm text-muted-foreground">
         Loading config…
       </p>
     );
@@ -78,66 +78,74 @@ export function SiteSettingsPanel({ site }: Props) {
 
   if (config.isError) {
     return (
-      <p className="px-6 py-10 text-sm text-destructive">
+      <p className="px-6 pb-10 pt-4 text-sm text-destructive">
         Failed to load config: {describeError(config.error)}
       </p>
     );
   }
 
   return (
+    // Same shell every panel uses: header bar pinned to the top of the
+    // tab area, content scrolls underneath. Keeps tab switching from
+    // looking like the start position is jumping around.
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="space-y-8 px-6 py-6"
+      className="flex h-full flex-col"
     >
-      <section>
-        <header className="mb-4 flex items-baseline justify-between">
-          <div>
-            <h2 className="text-base font-semibold">Site</h2>
-            <p className="text-xs text-muted-foreground">
-              Edited fields write back to{" "}
-              <code className="font-mono">
-                {config.data?.sources.map((s) => relName(s.path)).join(", ")}
-              </code>{" "}
-              · format {config.data?.format.toUpperCase()}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            {savedFlash && (
-              <span className="text-xs text-muted-foreground">Saved.</span>
-            )}
-            {save.isError && (
-              <span className="text-xs text-destructive">
-                {describeError(save.error)}
-              </span>
-            )}
-            <Button
-              type="submit"
-              size="sm"
-              disabled={save.isPending || !form.formState.isDirty}
-            >
-              <Save className="size-4" />
-              {save.isPending ? "Saving…" : "Save changes"}
-            </Button>
-          </div>
-        </header>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {knownFieldDefs.map((field) => (
-            <FormField key={field.key} field={field} form={form} />
-          ))}
+      <header className="flex items-center justify-between gap-3 border-b px-6 py-3">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold leading-tight">Site</h2>
+          <p
+            className="truncate text-xs text-muted-foreground"
+            title={config.data?.sources.map((s) => s.path).join(", ")}
+          >
+            Writes to{" "}
+            <code className="font-mono">
+              {config.data?.sources.map((s) => relName(s.path)).join(", ")}
+            </code>{" "}
+            · {config.data?.format.toUpperCase()}
+          </p>
         </div>
-      </section>
+        <div className="flex shrink-0 items-center gap-3">
+          {savedFlash && (
+            <span className="text-xs text-muted-foreground">Saved.</span>
+          )}
+          {save.isError && (
+            <span className="text-xs text-destructive">
+              {describeError(save.error)}
+            </span>
+          )}
+          <Button
+            type="submit"
+            size="sm"
+            disabled={save.isPending || !form.formState.isDirty}
+          >
+            <Save className="size-4" />
+            {save.isPending ? "Saving…" : "Save changes"}
+          </Button>
+        </div>
+      </header>
 
-      <section>
-        <h2 className="mb-2 text-base font-semibold">Advanced (read-only)</h2>
-        <p className="mb-3 text-xs text-muted-foreground">
-          Top-level keys outside the curated form. JSON-editing arbitrary keys
-          is M9 work.
-        </p>
-        <pre className="max-h-80 overflow-auto rounded-md border bg-muted/30 p-4 font-mono text-xs leading-relaxed">
-          {advancedJson || "{}"}
-        </pre>
-      </section>
+      <div className="flex-1 space-y-8 overflow-auto px-6 py-6">
+        <section>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {knownFieldDefs.map((field) => (
+              <FormField key={field.key} field={field} form={form} />
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-base font-semibold">Advanced (read-only)</h2>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Top-level keys outside the curated form. JSON-editing arbitrary keys
+            is M9 work.
+          </p>
+          <pre className="max-h-80 overflow-auto rounded-md border bg-muted/30 p-4 font-mono text-xs leading-relaxed">
+            {advancedJson || "{}"}
+          </pre>
+        </section>
+      </div>
     </form>
   );
 }

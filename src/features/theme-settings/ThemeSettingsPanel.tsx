@@ -50,23 +50,27 @@ export function ThemeSettingsPanel({ site }: Props) {
 
   if (info.isPending) {
     return (
-      <p className="px-6 py-10 text-sm text-muted-foreground">Loading theme…</p>
+      <p className="px-6 pb-10 pt-4 text-sm text-muted-foreground">
+        Loading theme…
+      </p>
     );
   }
   if (info.isError || !info.data) {
     return (
-      <p className="px-6 py-10 text-sm text-destructive">
+      <p className="px-6 pb-10 pt-4 text-sm text-destructive">
         {describeError(info.error)}
       </p>
     );
   }
 
   return (
-    <div className="space-y-8 px-6 py-6">
-      <header className="flex items-start justify-between gap-4">
-        <div>
+    // Same shell every panel uses: header bar pinned to the top of the
+    // tab area, content scrolls underneath. See SiteShell for context.
+    <div className="flex h-full flex-col">
+      <header className="flex items-center justify-between gap-3 border-b px-6 py-3">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold">
+            <h2 className="truncate text-sm font-semibold leading-tight">
               {info.data.themeName
                 ? `Theme: ${info.data.themeName}`
                 : "Theme params"}
@@ -75,20 +79,20 @@ export function ThemeSettingsPanel({ site }: Props) {
           </div>
           {info.data.themePath && (
             <p
-              className="mt-1 truncate font-mono text-xs text-muted-foreground"
+              className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
               title={info.data.themePath}
             >
               {info.data.themePath}
             </p>
           )}
           {!info.data.themeName && (
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
               No <code className="font-mono">theme</code> set in your config —
               editing free-form params already in use.
             </p>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           {savedFlash && (
             <span className="text-xs text-muted-foreground">Saved.</span>
           )}
@@ -109,17 +113,19 @@ export function ThemeSettingsPanel({ site }: Props) {
         </div>
       </header>
 
-      {info.data.schema.fields.length === 0 ? (
-        <div className="rounded-lg border border-dashed bg-muted/30 px-6 py-8 text-center text-sm text-muted-foreground">
-          The theme exposes no params and the site has none set yet.
-        </div>
-      ) : (
-        <FrontMatterForm
-          schema={info.data.schema}
-          values={params}
-          onChange={setParams}
-        />
-      )}
+      <div className="flex-1 overflow-auto px-6 py-6">
+        {info.data.schema.fields.length === 0 ? (
+          <div className="rounded-lg border border-dashed bg-muted/30 px-6 py-8 text-center text-sm text-muted-foreground">
+            The theme exposes no params and the site has none set yet.
+          </div>
+        ) : (
+          <FrontMatterForm
+            schema={info.data.schema}
+            values={params}
+            onChange={setParams}
+          />
+        )}
+      </div>
     </div>
   );
 }

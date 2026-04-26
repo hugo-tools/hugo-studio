@@ -132,7 +132,15 @@ export function SiteShell({ site }: Props) {
                   <TabsTrigger value="git">Git</TabsTrigger>
                 </TabsList>
               </div>
-              <TabsContent value="site" className="mt-0 flex-1 overflow-auto">
+              {/* All TabsContent panels use the same flex-column shell so
+                  their inner layouts share one anchor: top-flush against
+                  the trigger row, fills the whole tab area, never adds
+                  unexpected padding. Each panel manages its own scroll
+                  inside. */}
+              <TabsContent
+                value="site"
+                className="mt-0 flex flex-1 flex-col overflow-hidden"
+              >
                 <SiteSettingsPanel site={site} />
               </TabsContent>
               <TabsContent
@@ -151,7 +159,7 @@ export function SiteShell({ site }: Props) {
                   </div>
                   <TabsContent
                     value="params"
-                    className="mt-0 flex-1 overflow-auto"
+                    className="mt-0 flex flex-1 flex-col overflow-hidden"
                   >
                     <ThemeSettingsPanel site={site} />
                   </TabsContent>
@@ -181,7 +189,10 @@ export function SiteShell({ site }: Props) {
               >
                 <DataLibrary site={site} />
               </TabsContent>
-              <TabsContent value="git" className="mt-0 flex-1 overflow-auto">
+              <TabsContent
+                value="git"
+                className="mt-0 flex flex-1 flex-col overflow-hidden"
+              >
                 <GitPanel site={site} />
               </TabsContent>
             </Tabs>
