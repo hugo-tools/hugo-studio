@@ -90,7 +90,7 @@ export function SettingsDialog({ open, onOpenChange }: Props) {
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-lg">
+      <AlertDialogContent className="w-[min(640px,92vw)] max-w-none overflow-hidden">
         <AlertDialogHeader>
           <AlertDialogTitle>Settings</AlertDialogTitle>
           <AlertDialogDescription>
@@ -125,17 +125,21 @@ export function SettingsDialog({ open, onOpenChange }: Props) {
             </div>
           </section>
 
-          <section>
+          <section className="min-w-0">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Hugo binary
             </h3>
-            <div className="flex gap-2">
+            {/* `min-w-0` on the row + `flex-1 min-w-0` on the Input is
+                what lets long paths shrink instead of pushing the
+                trailing icon buttons off-screen. */}
+            <div className="flex min-w-0 items-center gap-2">
               <Input
                 type="text"
                 value={hugoPath}
                 onChange={(e) => setHugoPath(e.target.value)}
                 placeholder="(leave empty to use PATH)"
-                className="font-mono text-xs"
+                title={hugoPath || undefined}
+                className="min-w-0 flex-1 truncate font-mono text-xs"
               />
               <Button
                 type="button"
@@ -145,6 +149,7 @@ export function SettingsDialog({ open, onOpenChange }: Props) {
                 disabled={pickHugo.isPending}
                 aria-label="Pick Hugo binary"
                 title="Browse"
+                className="shrink-0"
               >
                 <FolderOpen className="size-4" />
               </Button>
@@ -156,6 +161,7 @@ export function SettingsDialog({ open, onOpenChange }: Props) {
                 disabled={hugoPath === "" || save.isPending}
                 aria-label="Clear and use PATH"
                 title="Clear (use PATH)"
+                className="shrink-0"
               >
                 <RotateCcw className="size-4" />
               </Button>
@@ -207,13 +213,18 @@ function ResolvedHint({
     return (
       <p
         className={cn(
-          "mt-2 flex items-center gap-1.5 text-xs",
+          "mt-2 flex min-w-0 items-center gap-1.5 text-xs",
           "text-emerald-700 dark:text-emerald-400",
         )}
         title={path}
       >
-        <CheckCircle2 className="size-3.5" />
-        <span className="truncate font-mono">Will use: {path}</span>
+        <CheckCircle2 className="size-3.5 shrink-0" />
+        {/* `min-w-0 flex-1` lets the truncate kick in inside the
+            flex parent — without it the span keeps its intrinsic
+            width and overflows the dialog. */}
+        <span className="min-w-0 flex-1 truncate font-mono">
+          Will use: {path}
+        </span>
       </p>
     );
   }

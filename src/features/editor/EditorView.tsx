@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { UnlistenFn } from "@tauri-apps/api/event";
@@ -23,7 +23,16 @@ import { BundleAssetsPanel } from "@/features/assets/BundleAssetsPanel";
 import { MediaPickerDialog } from "@/features/media/MediaPickerDialog";
 import { FrontMatterForm } from "./FrontMatterForm";
 import { BodyEditor, type BodyEditorHandle } from "./BodyEditor";
-import { RichEditor } from "./RichEditor";
+
+// Lazy-load WYSIWYG editors so the heavy ProseMirror payloads only
+// arrive when a user actually opens the Rich tab. Two distinct
+// editors: Milkdown for markdown, TipTap for HTML.
+const RichEditor = lazy(() =>
+  import("./RichEditor").then((m) => ({ default: m.RichEditor })),
+);
+const RichHtmlEditor = lazy(() =>
+  import("./RichHtmlEditor").then((m) => ({ default: m.RichHtmlEditor })),
+);
 
 type BodyFormat = ContentEditPayload["bodyFormat"];
 
@@ -245,7 +254,7 @@ export function EditorView({ site, selection }: Props) {
             <TabsList>
               <TabsTrigger value="frontmatter">Front matter</TabsTrigger>
               <TabsTrigger value="body">Body</TabsTrigger>
-              {!isHtml && <TabsTrigger value="rich">Rich</TabsTrigger>}
+              <TabsTrigger value="rich">Rich</TabsTrigger>
             </TabsList>
           </div>
           <TabsContent
@@ -269,28 +278,45 @@ export function EditorView({ site, selection }: Props) {
               language={isHtml ? "html" : "markdown"}
             />
           </TabsContent>
-          {!isHtml && (
-            <TabsContent
-              value="rich"
-              className="mt-0 flex h-full flex-1 flex-col overflow-hidden"
-            >
-              <div className="border-b bg-muted/30 px-4 py-1.5 text-[10px] text-muted-foreground">
-                Visual editor (Milkdown). Hugo shortcodes pass through as raw
-                text. Switching back to Body may canonicalise the markdown (e.g.
-                `*foo*` ↔ `_foo_`).
-              </div>
-              {/* Re-mount whenever the loaded document path changes so a
-                  fresh body string seeds the editor. While the user stays
-                  on this content, Crepe owns the in-flight state. */}
-              <div className="flex-1 overflow-hidden">
-                <RichEditor
-                  key={selection.path}
-                  value={body}
-                  onChange={setBody}
-                />
-              </div>
-            </TabsContent>
-          )}
+          <TabsContent
+            value="rich"
+            className="mt-0 flex h-full flex-1 flex-col overflow-hidden"
+          >
+            <div className="border-b bg-muted/30 px-4 py-1.5 text-[10px] text-muted-foreground">
+              {isHtml
+                ? "Visual editor (TipTap). Output is HTML — embedded scripts, " +
+                  "shortcodes and complex layouts may be normalised on save."
+                : "Visual editor (Milkdown). Hugo shortcodes pass through as " +
+                  "raw text. Switching back to Body may canonicalise the " +
+                  "markdown (e.g. `*foo*` ↔ `_foo_`)."}
+            </div>
+            {/* Re-mount whenever the loaded document path changes so a
+                fresh body string seeds the editor. While the user stays
+                on this content, the WYSIWYG owns the in-flight state. */}
+            <div className="flex-1 overflow-hidden">
+              <Suspense
+                fallback={
+                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                    Loading editor…
+                  </div>
+                }
+              >
+                {isHtml ? (
+                  <RichHtmlEditor
+                    key={selection.path}
+                    value={body}
+                    onChange={setBody}
+                  />
+                ) : (
+                  <RichEditor
+                    key={selection.path}
+                    value={body}
+                    onChange={setBody}
+                  />
+                )}
+              </Suspense>
+            </div>
+          </TabsContent>
         </Tabs>
         {showAssets && (
           <BundleAssetsPanel

@@ -60,3 +60,54 @@
       "calt" 1;
   }
 }
+
+/* Minimal styling for the TipTap (HTML WYSIWYG) editor surface so
+ * headings/lists/blockquotes are visually distinguishable without
+ * dragging in @tailwindcss/typography. Targets ProseMirror's root
+ * node `.ProseMirror` and its descendants; scoped to `.html-editor`
+ * so other ProseMirror instances (Milkdown's Crepe) remain untouched. */
+.html-editor .ProseMirror {
+  @apply text-sm leading-relaxed;
+}
+.html-editor .ProseMirror h1 {
+  @apply mb-4 mt-6 text-2xl font-bold;
+}
+.html-editor .ProseMirror h2 {
+  @apply mb-3 mt-5 text-xl font-bold;
+}
+.html-editor .ProseMirror h3 {
+  @apply mb-2 mt-4 text-lg font-semibold;
+}
+.html-editor .ProseMirror p {
+  @apply my-2;
+}
+.html-editor .ProseMirror ul {
+  @apply my-2 list-disc pl-6;
+}
+.html-editor .ProseMirror ol {
+  @apply my-2 list-decimal pl-6;
+}
+.html-editor .ProseMirror li > p {
+  @apply my-0;
+}
+.html-editor .ProseMirror blockquote {
+  @apply my-3 border-l-4 border-muted pl-4 italic text-muted-foreground;
+}
+.html-editor .ProseMirror code {
+  @apply rounded bg-muted px-1 py-0.5 font-mono text-xs;
+}
+.html-editor .ProseMirror pre {
+  @apply my-3 overflow-x-auto rounded bg-muted p-3 font-mono text-xs;
+}
+.html-editor .ProseMirror pre code {
+  @apply bg-transparent p-0;
+}
+.html-editor .ProseMirror a {
+  @apply text-primary underline;
+}
+.html-editor .ProseMirror img {
+  @apply my-2 inline-block max-w-full rounded;
+}
+.html-editor .ProseMirror hr {
+  @apply my-4 border-border;
+}

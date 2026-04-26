@@ -26,12 +26,23 @@ export default defineConfig(async () => ({
         // the top-level package name leaves the transitive deps in the
         // main chunk. Match by id substring instead.
         manualChunks(id) {
+          // ProseMirror is shared transitively by both Milkdown and
+          // TipTap — give it its own chunk so the two WYSIWYG bundles
+          // (each lazy-loaded) don't carry a duplicate copy. Both
+          // editor wrappers stay in their own chunks so an HTML user
+          // never downloads Milkdown and vice-versa.
           if (
-            id.includes("/@milkdown/") ||
             id.includes("/prosemirror-") ||
-            id.includes("/@prosemirror/")
+            id.includes("/@prosemirror/") ||
+            id.includes("/@tiptap/pm/")
           ) {
+            return "prosemirror";
+          }
+          if (id.includes("/@milkdown/")) {
             return "milkdown";
+          }
+          if (id.includes("/@tiptap/")) {
+            return "tiptap";
           }
           if (
             id.includes("/@codemirror/") ||
