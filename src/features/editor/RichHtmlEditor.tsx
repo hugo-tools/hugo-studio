@@ -57,7 +57,12 @@ export function RichHtmlEditor({ value, onChange }: Props) {
     content: value,
     editorProps: {
       attributes: {
-        class: "min-h-full px-5 py-4 focus:outline-none",
+        // `h-full` here makes ProseMirror itself fill the scroll
+        // container so an empty doc is still clickable across the
+        // whole writable area. `min-h-full` alone wouldn't do it on
+        // browsers that don't propagate height through the
+        // EditorContent wrapper.
+        class: "h-full min-h-full px-5 py-4 focus:outline-none",
       },
     },
     onUpdate: ({ editor }) => {
@@ -76,8 +81,15 @@ export function RichHtmlEditor({ value, onChange }: Props) {
   return (
     <div className="html-editor flex h-full flex-col bg-background">
       <Toolbar editor={editor} />
-      <div className="flex-1 overflow-auto">
-        <EditorContent editor={editor} className="h-full" />
+      {/* `flex flex-col` on the scroller + `flex-1` on EditorContent
+          (via the CSS rule below) keeps the editable surface anchored
+          to the top of the area; without this, empty documents leave
+          a noticeable gap above the toolbar's text baseline. */}
+      <div className="flex flex-1 flex-col overflow-auto">
+        <EditorContent
+          editor={editor}
+          className="flex h-full min-h-full flex-1 flex-col"
+        />
       </div>
     </div>
   );

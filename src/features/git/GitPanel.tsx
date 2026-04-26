@@ -113,14 +113,14 @@ export function GitPanel({ site }: Props) {
 
   if (status.isPending) {
     return (
-      <p className="px-6 py-10 text-sm text-muted-foreground">
+      <p className="px-6 pb-10 pt-4 text-sm text-muted-foreground">
         Reading git status…
       </p>
     );
   }
   if (status.isError) {
     return (
-      <p className="px-6 py-10 text-sm text-destructive">
+      <p className="px-6 pb-10 pt-4 text-sm text-destructive">
         {describeError(status.error)}
       </p>
     );
@@ -130,7 +130,7 @@ export function GitPanel({ site }: Props) {
 
   if (!data.isRepo) {
     return (
-      <div className="px-6 py-10">
+      <div className="px-6 pb-10 pt-4">
         <div className="mx-auto max-w-md rounded-lg border border-dashed bg-muted/30 px-6 py-8 text-center text-sm">
           <GitBranch className="mx-auto size-6 text-muted-foreground" />
           <p className="mt-2 font-medium">Not a git repository</p>
@@ -151,7 +151,10 @@ export function GitPanel({ site }: Props) {
   const canPull = !!data.upstream && data.behind > 0;
 
   return (
-    <div className="space-y-6 px-6 py-6">
+    // No `py-6` at the top — the panel sits flush against the
+    // SiteShell's tab triggers. Bottom padding stays so the last
+    // section doesn't kiss the edge of the scroll container.
+    <div className="space-y-6 px-6 pb-6 pt-4">
       <header className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">

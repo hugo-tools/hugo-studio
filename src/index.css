@@ -66,8 +66,17 @@
  * dragging in @tailwindcss/typography. Targets ProseMirror's root
  * node `.ProseMirror` and its descendants; scoped to `.html-editor`
  * so other ProseMirror instances (Milkdown's Crepe) remain untouched. */
+.html-editor .tiptap {
+  /* TipTap renders an unstyled wrapper between EditorContent's div
+   * and the .ProseMirror element. Force it to grow with the flex
+   * column above so the editable area can fill the full panel. */
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 100%;
+  flex-direction: column;
+}
 .html-editor .ProseMirror {
-  @apply text-sm leading-relaxed;
+  @apply flex-1 text-sm leading-relaxed;
 }
 .html-editor .ProseMirror h1 {
   @apply mb-4 mt-6 text-2xl font-bold;

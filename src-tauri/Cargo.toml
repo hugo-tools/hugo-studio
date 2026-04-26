@@ -1,6 +1,6 @@
 [package]
 name = "hugo-studio"
-version = "1.7.0"
+version = "1.7.1"
 description = "Hugo Studio — desktop editor for Hugo sites"
 authors = ["Hugo Studio contributors"]
 edition = "2021"

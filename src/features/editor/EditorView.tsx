@@ -259,13 +259,19 @@ export function EditorView({ site, selection }: Props) {
           </div>
           <TabsContent
             value="frontmatter"
-            className="mt-0 flex-1 overflow-auto p-6"
+            className="mt-0 flex-1 overflow-auto"
           >
-            <FrontMatterForm
-              schema={doc.data.schema}
-              values={fm}
-              onChange={setFm}
-            />
+            {/* `min-h-full` makes the form's background panel stretch to
+                fill the tab area even when there are only a handful of
+                fields, so the user sees one coherent surface instead
+                of a short form floating over an empty pane. */}
+            <div className="min-h-full p-6">
+              <FrontMatterForm
+                schema={doc.data.schema}
+                values={fm}
+                onChange={setFm}
+              />
+            </div>
           </TabsContent>
           <TabsContent
             value="body"
