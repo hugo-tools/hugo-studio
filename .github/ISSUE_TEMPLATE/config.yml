@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Question / discussion
-    url: https://github.com/sirmmo/hugo-studio/discussions
+    url: https://github.com/hugo-tools/hugo-studio/discussions
     about: For open-ended questions, ideas without a concrete proposal, or "is this how it's supposed to work?". Discussions stay open longer than issues.
   - name: Theme schema documentation
-    url: https://github.com/sirmmo/hugo-studio/blob/main/README.md#for-theme-authors-hugoeditortheme-schemajson
+    url: https://github.com/hugo-tools/hugo-studio/blob/main/README.md#for-theme-authors-hugoeditortheme-schemajson
     about: How to ship a `.hugoeditor/theme-schema.json` with your theme so editors get a real form.

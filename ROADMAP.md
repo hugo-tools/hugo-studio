@@ -103,7 +103,7 @@ Not committed, but interesting:
 ## How to contribute to the roadmap
 
 - For a small feature: open an issue with the
-  [feature template](https://github.com/sirmmo/hugo-studio/issues/new/choose),
+  [feature template](https://github.com/hugo-tools/hugo-studio/issues/new/choose),
   describe the workflow it enables, and propose a UI surface.
 - For something larger: open a discussion or a draft PR with a short
   design note. Add a one-line entry under "Up next" in the same PR.

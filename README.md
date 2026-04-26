@@ -7,9 +7,9 @@
 
 <img width="1281" height="802" alt="image" src="https://github.com/user-attachments/assets/3598e5f5-b4a3-4572-a244-5e43f23b485d" />
 
-[![Latest release](https://img.shields.io/github/v/release/sirmmo/hugo-studio?include_prereleases&display_name=tag&color=blue)](https://github.com/sirmmo/hugo-studio/releases/latest)
-[![Release workflow](https://img.shields.io/github/actions/workflow/status/sirmmo/hugo-studio/release.yml?label=release%20build)](https://github.com/sirmmo/hugo-studio/actions/workflows/release.yml)
-[![CI](https://img.shields.io/github/actions/workflow/status/sirmmo/hugo-studio/build.yml?label=CI)](https://github.com/sirmmo/hugo-studio/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/hugo-tools/hugo-studio?include_prereleases&display_name=tag&color=blue)](https://github.com/hugo-tools/hugo-studio/releases/latest)
+[![Release workflow](https://img.shields.io/github/actions/workflow/status/hugo-tools/hugo-studio/release.yml?label=release%20build)](https://github.com/hugo-tools/hugo-studio/actions/workflows/release.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/hugo-tools/hugo-studio/build.yml?label=CI)](https://github.com/hugo-tools/hugo-studio/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![Built with Tauri 2](https://img.shields.io/badge/built%20with-Tauri%202-24c8db)](https://tauri.app/)
 
@@ -58,7 +58,7 @@ Pre-built installers are attached to every GitHub Release.
 | **Windows** (x64)       | NSIS `.exe`          | Standard installer. SmartScreen may warn on the first run; "More info" → "Run anyway".                                                      |
 | **Linux** (x64)         | `.AppImage` + `.deb` | AppImage runs anywhere; `.deb` for Debian / Ubuntu.                                                                                         |
 
-Get them from the [latest release](https://github.com/sirmmo/hugo-studio/releases/latest).
+Get them from the [latest release](https://github.com/hugo-tools/hugo-studio/releases/latest).
 
 ## Build from source
 

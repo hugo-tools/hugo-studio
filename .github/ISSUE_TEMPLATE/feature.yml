@@ -67,5 +67,5 @@ body:
       options:
         - label: I searched existing issues for a similar request.
           required: true
-        - label: I read [`ROADMAP.md`](https://github.com/sirmmo/hugo-studio/blob/main/ROADMAP.md) to see if this is already planned.
+        - label: I read [`ROADMAP.md`](https://github.com/hugo-tools/hugo-studio/blob/main/ROADMAP.md) to see if this is already planned.
           required: false

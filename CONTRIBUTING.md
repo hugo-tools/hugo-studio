@@ -6,9 +6,9 @@ and pull requests are all welcome.
 ## Reporting bugs / asking for features
 
 Open an issue using the
-[bug](https://github.com/sirmmo/hugo-studio/issues/new?template=bug.yml)
+[bug](https://github.com/hugo-tools/hugo-studio/issues/new?template=bug.yml)
 or
-[feature](https://github.com/sirmmo/hugo-studio/issues/new?template=feature.yml)
+[feature](https://github.com/hugo-tools/hugo-studio/issues/new?template=feature.yml)
 template. The more reproducible the bug, the faster the fix; for
 features, describe the workflow you want to enable, not just the
 control you want added — that helps us pick the right surface.
@@ -20,7 +20,7 @@ to fight Tauri 2's Linux deps, Rust 1.85+, Node 20, and Hugo extended
 on your host.
 
 ```bash
-git clone https://github.com/sirmmo/hugo-studio.git
+git clone https://github.com/hugo-tools/hugo-studio.git
 cd hugo-studio
 make image     # builds .docker/Dockerfile.dev once
 make shell     # interactive shell inside the container
