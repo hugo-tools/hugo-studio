@@ -123,6 +123,8 @@ export const tauri = {
     unwrap(commands.dataWrite(siteId, relPath, text)),
   dataCreate: (siteId: SiteId, relPath: string): Promise<DataFile> =>
     unwrap(commands.dataCreate(siteId, relPath)),
+  dataImport: (siteId: SiteId, source: string): Promise<DataFile> =>
+    unwrap(commands.dataImport(siteId, source)),
   dataDelete: (siteId: SiteId, relPath: string): Promise<null> =>
     unwrap(commands.dataDelete(siteId, relPath)),
   gitStatus: (siteId: SiteId): Promise<GitStatus> =>

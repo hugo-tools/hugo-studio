@@ -36,13 +36,21 @@ impl DataFormat {
             .as_deref()
         {
             Some("csv") => Self::Csv,
-            Some("json") => Self::Json,
+            // GeoJSON is JSON with a specific schema — Hugo parses it as
+            // JSON when loaded under data/. Surface it as Json so the
+            // existing editor opens it.
+            Some("json") | Some("geojson") => Self::Json,
             Some("yaml") | Some("yml") => Self::Yaml,
             Some("toml") => Self::Toml,
             _ => Self::Other,
         }
     }
 }
+
+/// Lower-cased extensions accepted by the OS-drop importer. Anything
+/// else is rejected up front so users don't accidentally drag random
+/// binary files into `data/` and break Hugo at build time.
+pub const IMPORT_EXTENSIONS: &[&str] = &["csv", "json", "geojson", "yaml", "yml", "toml"];
 
 /// Maximum walk depth into `data/`. Hugo recursion is unbounded but
 /// real-world sites don't go anywhere near this; cap protects against
@@ -150,6 +158,81 @@ pub fn create(site_root: &Path, rel_path: &str) -> AppResult<DataFile> {
         format,
         size: metadata.len(),
     })
+}
+
+/// Copy `source` into `<site>/data/`, suffixing the file name with
+/// `-1`, `-2`, … if a file with the same name already exists so we
+/// never silently overwrite the user's data. Refuses any extension
+/// outside [`IMPORT_EXTENSIONS`].
+pub fn import(site_root: &Path, source: &Path) -> AppResult<DataFile> {
+    if !source.is_file() {
+        return Err(AppError::Io(format!(
+            "source is not a file: {}",
+            source.display()
+        )));
+    }
+    let ext = source
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(str::to_ascii_lowercase)
+        .unwrap_or_default();
+    if !IMPORT_EXTENSIONS.contains(&ext.as_str()) {
+        return Err(AppError::Io(format!(
+            "unsupported data extension: {ext} (allowed: {})",
+            IMPORT_EXTENSIONS.join(", ")
+        )));
+    }
+
+    let data_dir = site_root.join("data");
+    std::fs::create_dir_all(&data_dir)?;
+    sandbox_check(site_root, &data_dir)?;
+
+    let original_name = source
+        .file_name()
+        .ok_or_else(|| AppError::Io("source has no file name".into()))?;
+    let dest_name = unique_name(&data_dir, original_name);
+    let dest_path = data_dir.join(&dest_name);
+    sandbox_check(site_root, &dest_path)?;
+
+    std::fs::copy(source, &dest_path)?;
+    let metadata = std::fs::metadata(&dest_path)?;
+    let name = dest_name.to_string_lossy().to_string();
+    Ok(DataFile {
+        id: site_relative_id(site_root, &dest_path),
+        name: name.clone(),
+        rel_path: name,
+        path: dest_path.display().to_string(),
+        format: DataFormat::from_path(&dest_path),
+        size: metadata.len(),
+    })
+}
+
+/// Find a non-colliding file name under `dir` by suffixing `-1`,
+/// `-2`, …  before the extension. Mirrors `assets::unique_name`.
+fn unique_name(dir: &Path, name: &std::ffi::OsStr) -> std::ffi::OsString {
+    if !dir.join(name).exists() {
+        return name.to_os_string();
+    }
+    let stem = Path::new(name)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("file");
+    let ext = Path::new(name)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| format!(".{e}"))
+        .unwrap_or_default();
+    for n in 1..=999 {
+        let probe = format!("{stem}-{n}{ext}");
+        if !dir.join(&probe).exists() {
+            return std::ffi::OsString::from(probe);
+        }
+    }
+    let nonce: u64 = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos() as u64)
+        .unwrap_or(0);
+    std::ffi::OsString::from(format!("{stem}-{nonce}{ext}"))
 }
 
 pub fn delete(site_root: &Path, rel_path: &str) -> AppResult<()> {
@@ -348,6 +431,52 @@ mod tests {
         let (_t, root) = site();
         assert!(read_text(&root, "../escape.txt").is_err());
         assert!(write_text(&root, "../escape.txt", "x").is_err());
+    }
+
+    #[test]
+    fn import_copies_csv_into_data_root() {
+        let (tmp, root) = site();
+        let src = tmp.path().join("ext-team.csv");
+        fs::write(&src, "name,role\nAna,dev\n").unwrap();
+        let dest = import(&root, &src).unwrap();
+        assert_eq!(dest.format, DataFormat::Csv);
+        assert!(root.join("data/ext-team.csv").is_file());
+        assert_eq!(dest.rel_path, "ext-team.csv");
+    }
+
+    #[test]
+    fn import_appends_suffix_on_collision() {
+        let (tmp, root) = site();
+        fs::create_dir_all(root.join("data")).unwrap();
+        fs::write(root.join("data/products.json"), "{\"a\":1}").unwrap();
+        let src = tmp.path().join("products.json");
+        fs::write(&src, "{\"a\":2}").unwrap();
+        let dest = import(&root, &src).unwrap();
+        assert_eq!(dest.rel_path, "products-1.json");
+        assert!(root.join("data/products.json").is_file());
+        assert!(root.join("data/products-1.json").is_file());
+    }
+
+    #[test]
+    fn import_accepts_geojson_and_classifies_as_json() {
+        let (tmp, root) = site();
+        let src = tmp.path().join("zones.geojson");
+        fs::write(&src, "{\"type\":\"FeatureCollection\"}").unwrap();
+        let dest = import(&root, &src).unwrap();
+        assert_eq!(dest.format, DataFormat::Json);
+        assert_eq!(dest.rel_path, "zones.geojson");
+    }
+
+    #[test]
+    fn import_refuses_unsupported_extension() {
+        let (tmp, root) = site();
+        let src = tmp.path().join("blob.exe");
+        fs::write(&src, b"\x00\x01").unwrap();
+        let err = import(&root, &src).unwrap_err();
+        match err {
+            AppError::Io(msg) => assert!(msg.contains("unsupported data extension")),
+            other => panic!("expected Io, got {other:?}"),
+        }
     }
 
     #[test]

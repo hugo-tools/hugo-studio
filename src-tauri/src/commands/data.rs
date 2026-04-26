@@ -61,6 +61,17 @@ pub fn data_create(
 
 #[tauri::command]
 #[specta::specta]
+pub fn data_import(
+    state: State<'_, AppState>,
+    site_id: SiteId,
+    source: String,
+) -> AppResult<DataFile> {
+    let root = site_root(&state, site_id)?;
+    data::import(&root, std::path::Path::new(&source))
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn data_delete(state: State<'_, AppState>, site_id: SiteId, rel_path: String) -> AppResult<()> {
     let root = site_root(&state, site_id)?;
     data::delete(&root, &rel_path)

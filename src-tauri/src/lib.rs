@@ -47,6 +47,7 @@ pub fn make_specta_builder() -> Builder<tauri::Wry> {
         commands::content::content_save,
         commands::data::data_create,
         commands::data::data_delete,
+        commands::data::data_import,
         commands::data::data_list,
         commands::data::data_read,
         commands::data::data_write,

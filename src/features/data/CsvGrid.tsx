@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,11 @@ interface Props {
   onChange: (next: string) => void;
 }
 
+/** Default column width in pixels and the floor we clamp to so a
+ *  user can't drag a column down to nothing and lose access to it. */
+const DEFAULT_COL_WIDTH = 180;
+const MIN_COL_WIDTH = 60;
+
 /** Spreadsheet-style editor for CSV files. The first row is treated as
  *  headers (Hugo's `data/` convention); a Hugo template that loops over
  *  `index .Site.Data.foo` will see those header keys for each row. */
@@ -22,6 +27,11 @@ export function CsvGrid({ value, onChange }: Props) {
   const initial = useMemo(() => normalise(parseCsv(value)), [value]);
   const [headers, setHeaders] = useState<string[]>(initial.headers);
   const [rows, setRows] = useState<string[][]>(initial.rows);
+  // Column widths in CSS pixels, parallel to `headers`. New columns
+  // get DEFAULT_COL_WIDTH; resizing one cell sets only that column.
+  const [colWidths, setColWidths] = useState<number[]>(() =>
+    initial.headers.map(() => DEFAULT_COL_WIDTH),
+  );
 
   // If the upstream `value` is replaced (e.g. after a Save round-trip
   // re-derives it) reseed local state — but only when the parsed shape
@@ -35,11 +45,67 @@ export function CsvGrid({ value, onChange }: Props) {
     if (!same) {
       setHeaders(parsed.headers);
       setRows(parsed.rows);
+      // Preserve any user-resized widths that still apply (by index)
+      // and pad out / trim the array to match the new column count.
+      setColWidths((prev) => {
+        const next = parsed.headers.map((_, i) => prev[i] ?? DEFAULT_COL_WIDTH);
+        return next;
+      });
     }
     // headers/rows intentionally omitted: this only resets when the
     // *input* changes, not when our edits do.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
+
+  // Column-resize drag state. We attach mousemove/mouseup to window
+  // for the duration of the drag so a user releasing the mouse
+  // outside the cell still ends the operation cleanly.
+  const dragRef = useRef<{
+    column: number;
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+
+  function startResize(column: number, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragRef.current = {
+      column,
+      startX: e.clientX,
+      startWidth: colWidths[column] ?? DEFAULT_COL_WIDTH,
+    };
+    document.body.style.cursor = "col-resize";
+    window.addEventListener("mousemove", onResizeMove);
+    window.addEventListener("mouseup", onResizeEnd);
+  }
+  function onResizeMove(e: MouseEvent) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const next = Math.max(
+      MIN_COL_WIDTH,
+      drag.startWidth + (e.clientX - drag.startX),
+    );
+    setColWidths((prev) => {
+      const out = prev.slice();
+      out[drag.column] = next;
+      return out;
+    });
+  }
+  function onResizeEnd() {
+    dragRef.current = null;
+    document.body.style.cursor = "";
+    window.removeEventListener("mousemove", onResizeMove);
+    window.removeEventListener("mouseup", onResizeEnd);
+  }
+  // Defensive cleanup if the component unmounts mid-drag.
+  useEffect(() => {
+    return () => {
+      window.removeEventListener("mousemove", onResizeMove);
+      window.removeEventListener("mouseup", onResizeEnd);
+      document.body.style.cursor = "";
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function emit(nextHeaders: string[], nextRows: string[][]) {
     setHeaders(nextHeaders);
@@ -70,42 +136,57 @@ export function CsvGrid({ value, onChange }: Props) {
   function addColumn() {
     const nextHeaders = [...headers, `column${headers.length + 1}`];
     const nextRows = rows.map((row) => [...row, ""]);
+    setColWidths((prev) => [...prev, DEFAULT_COL_WIDTH]);
     emit(nextHeaders, nextRows);
   }
   function removeColumn(c: number) {
     if (headers.length <= 1) return;
     const nextHeaders = headers.filter((_, i) => i !== c);
     const nextRows = rows.map((row) => row.filter((_, i) => i !== c));
+    setColWidths((prev) => prev.filter((_, i) => i !== c));
     emit(nextHeaders, nextRows);
   }
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-auto">
-        <table className="min-w-full table-fixed border-separate border-spacing-0 text-xs">
+        <table className="table-fixed border-separate border-spacing-0 text-xs">
+          {/* `<colgroup>` drives the per-column widths; using inline
+              `style.width` on a `<col>` lets us animate them via state
+              without re-rendering each `<td>`. */}
+          <colgroup>
+            <col style={{ width: "2.5rem" }} />
+            {headers.map((_h, c) => (
+              <col
+                key={c}
+                style={{ width: `${colWidths[c] ?? DEFAULT_COL_WIDTH}px` }}
+              />
+            ))}
+            <col style={{ width: "2.5rem" }} />
+          </colgroup>
           <thead className="sticky top-0 z-10 bg-muted">
             <tr>
-              <th className="w-10 border-b border-r px-2 py-1 text-[10px] text-muted-foreground">
+              <th className="border-b border-r px-2 py-1 text-[10px] text-muted-foreground">
                 #
               </th>
               {headers.map((h, c) => (
                 <th
                   key={c}
-                  className="group min-w-[120px] border-b border-r px-1 py-1 text-left"
+                  className="group relative border-b border-r px-1 py-1 text-left"
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 pr-1">
                     <Input
                       type="text"
                       value={h}
                       onChange={(e) => setHeader(c, e.target.value)}
-                      className="h-7 w-full px-2 py-0 font-mono text-[11px] font-semibold"
+                      className="h-7 w-full min-w-0 flex-1 px-2 py-0 font-mono text-[11px] font-semibold"
                     />
                     <Button
                       type="button"
                       size="icon"
                       variant="ghost"
                       className={cn(
-                        "size-6 text-destructive hover:text-destructive",
+                        "size-6 shrink-0 text-destructive hover:text-destructive",
                         headers.length <= 1 && "invisible",
                       )}
                       onClick={() => removeColumn(c)}
@@ -115,9 +196,18 @@ export function CsvGrid({ value, onChange }: Props) {
                       <Trash2 className="size-3" />
                     </Button>
                   </div>
+                  {/* Resize grip — 5px wide, sits over the right
+                      border. The hover styling keeps it discoverable
+                      without dominating the header layout. */}
+                  <div
+                    role="separator"
+                    aria-label={`Resize column ${h || c + 1}`}
+                    onMouseDown={(e) => startResize(c, e)}
+                    className="absolute -right-px top-0 z-20 h-full w-1.5 cursor-col-resize select-none bg-transparent hover:bg-primary/40"
+                  />
                 </th>
               ))}
-              <th className="w-10 border-b px-1 py-1">
+              <th className="border-b px-1 py-1">
                 <Button
                   type="button"
                   size="icon"

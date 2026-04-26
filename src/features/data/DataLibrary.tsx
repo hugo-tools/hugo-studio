@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   FileJson,
@@ -11,6 +11,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { rectMatcher, registerDropRegion } from "@/lib/dnd/regions";
 import {
   describeError,
   tauri,
@@ -20,6 +21,12 @@ import {
 } from "@/lib/tauri";
 import { BodyEditor } from "@/features/editor/BodyEditor";
 import { CsvGrid } from "./CsvGrid";
+
+/** Extensions accepted by the OS drop importer. Mirrors the backend's
+ *  `IMPORT_EXTENSIONS`. Anything else is silently dropped from the
+ *  batch with a summary alert so we don't open a million error dialogs
+ *  when the user multi-selects a folder of mixed files. */
+const IMPORT_EXTS = ["csv", "json", "geojson"] as const;
 
 interface Props {
   site: Site;
@@ -37,6 +44,8 @@ export function DataLibrary({ site }: Props) {
   });
 
   const [activePath, setActivePath] = useState<string | null>(null);
+  const [dropFlash, setDropFlash] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Auto-select the first file once the list lands so the editor side
   // isn't a blank rectangle staring at the user.
@@ -54,6 +63,70 @@ export function DataLibrary({ site }: Props) {
   const refreshList = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["data", site.id] });
   }, [queryClient, site.id]);
+
+  // OS drag-drop into the panel: claim the region while mounted; on a
+  // matching drop, import every file with an accepted extension into
+  // `data/`, refresh the listing, focus the first newly imported file.
+  // Mismatched files are surfaced once at the end so a folder of mixed
+  // content doesn't spawn a dialog stampede.
+  useEffect(() => {
+    return registerDropRegion({
+      match: rectMatcher(() => containerRef.current),
+      handle: async (paths) => {
+        const accepted: string[] = [];
+        const skipped: string[] = [];
+        for (const p of paths) {
+          const ext = p.split(/[\\/]/).pop()?.split(".").pop()?.toLowerCase();
+          if (ext && (IMPORT_EXTS as readonly string[]).includes(ext)) {
+            accepted.push(p);
+          } else {
+            skipped.push(p);
+          }
+        }
+        if (accepted.length === 0) {
+          if (skipped.length > 0) {
+            alert(
+              `Only .csv, .json and .geojson files can be imported into data/. Skipped:\n${skipped
+                .map((p) => "  " + basename(p))
+                .join("\n")}`,
+            );
+          }
+          return;
+        }
+        let firstImported: DataFile | null = null;
+        const failures: string[] = [];
+        for (const source of accepted) {
+          try {
+            const file = await tauri.dataImport(site.id, source);
+            if (!firstImported) firstImported = file;
+          } catch (e) {
+            failures.push(`${basename(source)}: ${describeError(e)}`);
+          }
+        }
+        refreshList();
+        if (firstImported) {
+          setActivePath(firstImported.relPath);
+          setDropFlash(true);
+          setTimeout(() => setDropFlash(false), 600);
+        }
+        if (failures.length > 0 || skipped.length > 0) {
+          const lines: string[] = [];
+          if (skipped.length > 0) {
+            lines.push(
+              `Skipped (unsupported extension): ${skipped
+                .map(basename)
+                .join(", ")}`,
+            );
+          }
+          if (failures.length > 0) {
+            lines.push("Failed:");
+            lines.push(...failures);
+          }
+          alert(lines.join("\n"));
+        }
+      },
+    });
+  }, [site.id, refreshList]);
 
   const createFile = useMutation({
     mutationFn: async () => {
@@ -83,7 +156,13 @@ export function DataLibrary({ site }: Props) {
   });
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div
+      ref={containerRef}
+      className={cn(
+        "flex h-full overflow-hidden transition-shadow",
+        dropFlash && "shadow-[inset_0_0_0_3px_hsl(var(--primary))]",
+      )}
+    >
       <aside className="flex w-60 shrink-0 flex-col border-r bg-muted/20">
         <header className="flex items-center justify-between border-b px-3 py-2">
           <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -244,6 +323,11 @@ function DataFileEditor({ site, file }: { site: Site; file: DataFile }) {
       </div>
     </div>
   );
+}
+
+function basename(p: string): string {
+  const idx = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
+  return idx >= 0 ? p.slice(idx + 1) : p;
 }
 
 function iconFor(format: DataFile["format"]) {

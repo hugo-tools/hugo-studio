@@ -149,6 +149,14 @@ async dataDelete(siteId: SiteId, relPath: string) : Promise<Result<null, AppErro
     else return { status: "error", error: e  as any };
 }
 },
+async dataImport(siteId: SiteId, source: string) : Promise<Result<DataFile, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("data_import", { siteId, source }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async dataList(siteId: SiteId) : Promise<Result<DataFile[], AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("data_list", { siteId }) };
