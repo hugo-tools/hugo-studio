@@ -88,10 +88,33 @@ pub fn save(path: &Path, new_fm: &serde_json::Value, new_body: &str) -> AppResul
     let raw = std::fs::read_to_string(path)?;
     let layout = parse_layout(&raw)?;
 
-    let new_fm_inner = match layout.format {
-        FrontMatterFormat::Toml => TomlCodec::apply_changes(layout.fm_inner, new_fm)?,
-        FrontMatterFormat::Yaml => YamlCodec::apply_changes(layout.fm_inner, new_fm)?,
-        FrontMatterFormat::Json => JsonCodec::apply_changes(layout.fm_inner, new_fm)?,
+    // The file might have started without front matter (typical for
+    // .html pages in Hugo). Decide first whether we have anything to
+    // emit at all so we don't ask the codec to serialise an empty
+    // object — YAML would helpfully produce `{}\n` and we'd write
+    // `{}\n<body>`, corrupting the file.
+    let had_fm = !layout.open.is_empty() || !layout.fm_inner.is_empty();
+    let wants_fm = fm_has_content(new_fm);
+    let new_fm_inner = if !had_fm && !wants_fm {
+        String::new()
+    } else {
+        match layout.format {
+            FrontMatterFormat::Toml => TomlCodec::apply_changes(layout.fm_inner, new_fm)?,
+            FrontMatterFormat::Yaml => YamlCodec::apply_changes(layout.fm_inner, new_fm)?,
+            FrontMatterFormat::Json => JsonCodec::apply_changes(layout.fm_inner, new_fm)?,
+        }
+    };
+
+    // If the user just added FM fields to a previously bare file we
+    // need to synthesise the delimiters too; otherwise the on-disk
+    // result would be `title: foo\n<body>` and Hugo would render the
+    // FM as page content. Default to YAML to match `parse_layout`'s
+    // fallback format.
+    let needs_synthesised_fm = !had_fm && wants_fm;
+    let (open, close) = if needs_synthesised_fm {
+        ("---\n", "---\n")
+    } else {
+        (layout.open, layout.close)
     };
 
     // Reassemble: leading + open + fm_inner + close + body. Body keeps its
@@ -99,9 +122,12 @@ pub fn save(path: &Path, new_fm: &serde_json::Value, new_body: &str) -> AppResul
     // already including the leading newline(s) the user had.
     let mut out = String::with_capacity(raw.len() + 64);
     out.push_str(layout.leading);
-    out.push_str(layout.open);
+    out.push_str(open);
     out.push_str(&new_fm_inner);
-    out.push_str(layout.close);
+    if needs_synthesised_fm && !new_fm_inner.ends_with('\n') {
+        out.push('\n');
+    }
+    out.push_str(close);
     out.push_str(new_body);
     if !new_body.ends_with('\n') && raw.ends_with('\n') {
         out.push('\n');
@@ -111,6 +137,18 @@ pub fn save(path: &Path, new_fm: &serde_json::Value, new_body: &str) -> AppResul
         return Ok(()); // nothing actually changed; skip the write
     }
     atomic_write(path, out.as_bytes())
+}
+
+/// True when the user actually has front matter to emit. The JSON
+/// value is the source of truth: codecs may stringify an empty object
+/// to `{}\n` (YAML) or `{}` (JSON), neither of which we want to treat
+/// as "needs delimiters" when the file had no FM to begin with.
+fn fm_has_content(value: &serde_json::Value) -> bool {
+    match value {
+        serde_json::Value::Object(map) => !map.is_empty(),
+        serde_json::Value::Null => false,
+        _ => true,
+    }
 }
 
 fn atomic_write(path: &Path, bytes: &[u8]) -> AppResult<()> {
@@ -393,6 +431,38 @@ mod tests {
         save(&p, &doc.front_matter, &doc.body).unwrap();
         let after = fs::read_to_string(&p).unwrap();
         assert_eq!(after, src);
+    }
+
+    #[test]
+    fn save_preserves_raw_html_with_no_front_matter() {
+        let tmp = TempDir::new().unwrap();
+        let p = tmp.path().join("page.html");
+        let src = "<!doctype html>\n<html><body>hi</body></html>\n";
+        fs::write(&p, src).unwrap();
+        let doc = read(&p).unwrap();
+        assert_eq!(doc.body, src);
+        // Saving with empty FM and the same body must not introduce
+        // delimiters; the file should be byte-identical.
+        save(&p, &serde_json::json!({}), &doc.body).unwrap();
+        assert_eq!(fs::read_to_string(&p).unwrap(), src);
+    }
+
+    #[test]
+    fn save_synthesises_yaml_delimiters_when_user_adds_fm_to_no_fm_file() {
+        let tmp = TempDir::new().unwrap();
+        let p = tmp.path().join("page.html");
+        let src = "<!doctype html>\n<html><body>hi</body></html>\n";
+        fs::write(&p, src).unwrap();
+        let doc = read(&p).unwrap();
+        save(&p, &serde_json::json!({"title": "Hello"}), &doc.body).unwrap();
+        let after = fs::read_to_string(&p).unwrap();
+        assert!(
+            after.starts_with("---\n"),
+            "expected synthesised YAML opener, got: {after:?}"
+        );
+        assert!(after.contains("title: Hello"));
+        assert!(after.contains("---\n<!doctype html>"));
+        assert!(after.ends_with("</html>\n"));
     }
 
     #[test]

@@ -230,8 +230,15 @@ export function EditorView({ site, selection }: Props) {
       </header>
 
       <div className={`grid flex-1 grid-cols-1 overflow-hidden ${gridCols}`}>
+        {/* Re-mount when the loaded file changes so the format-aware
+            defaultValue actually takes effect (and so `defaultValue`
+            differences across files don't get pinned by the first
+            mount). HTML pages typically carry the bulk of their
+            content in the body, so we land there directly; markdown
+            pages start on Front matter as before. */}
         <Tabs
-          defaultValue="frontmatter"
+          key={`${selection.path}-${bodyFormat}`}
+          defaultValue={isHtml ? "body" : "frontmatter"}
           className="flex h-full flex-col overflow-hidden"
         >
           <div className="border-b px-6 py-2">
