@@ -59,6 +59,17 @@
       "rlig" 1,
       "calt" 1;
   }
+
+  /* Radix UI sets `hidden` on inactive Tabs/Accordion/Collapsible
+   * content. The HTML5 UA rule `[hidden] { display: none }` has
+   * lower specificity than our Tailwind `flex` / `grid` utilities,
+   * so without this override an inactive TabsContent that was
+   * `flex` while active stays in the flex layout when "hidden",
+   * letting the next active panel render *below* where the
+   * previous one would have been instead of replacing it. */
+  [hidden] {
+    display: none !important;
+  }
 }
 
 /* Minimal styling for the TipTap (HTML WYSIWYG) editor surface so
