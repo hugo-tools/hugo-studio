@@ -112,8 +112,8 @@ three.
   the typed `AppError` instead).
 - TypeScript: `prettier`, `eslint`, no `any` unless paired with a
   one-line comment justifying it.
-- Comments document *why*, not *what*. The CI green light proves
-  *what*; only the *why* survives in the diff months later.
+- Comments document _why_, not _what_. The CI green light proves
+  _what_; only the _why_ survives in the diff months later.
 
 ### Architecture decisions
 

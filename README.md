@@ -34,27 +34,27 @@ indentation, line endings, BOM — all kept.
 
 ## What's in the box
 
-| Area | What you can do |
-|------|-----------------|
-| **Content** | Browse the `content/` tree, edit `.md` and `.html` files. Schema-driven front-matter form (21 standard Hugo fields curated; custom fields inferred from siblings). Markdown body in CodeMirror, rich Markdown WYSIWYG via Milkdown, rich HTML WYSIWYG via TipTap. New-content wizard with archetype dropdown and language picker. |
-| **Menus** | Visual editor for `[menu.<name>]` blocks — name / URL / weight / identifier / parent — add, remove, reorder, save through the format-preserving codecs. |
-| **Data** | Browse `data/*` files. CSV opens as a spreadsheet with **resizable columns**; JSON / GeoJSON / YAML / TOML open in a syntax-highlighted editor. Drag-drop CSV / JSON / GeoJSON files from the OS into the panel to import. |
-| **Media** | Browse `static/`, `assets/`, and the current page bundle. Thumbnail grid (live image previews via Tauri's asset protocol). Drag-drop OS files in, or pick from the editor's "Insert media" modal. Copy URLs, delete, rename. |
-| **Theme** | Edit theme params with a three-tier schema cascade (manifest > defaults > inferred). Browse and edit raw theme source files (layouts / partials / SCSS / JS / archetypes / i18n) with the right CodeMirror language. |
-| **Site config** | Curated form for `title`, `baseURL`, `theme`, `paginate`, language settings, and friends. Read-only JSON view for everything else. |
-| **Git** | Clone (HTTPS or SSH — vendored libssh2), branch switcher / new branch, status, stage / unstage, commit, pull, push, stash, force-pull. No system git required. |
-| **Live preview** | Embedded `hugo server` (kill-on-drop), iframe pane, collapsible Hugo console. Hugo extended is bundled as a Tauri sidecar — no separate install. |
-| **Across the app** | Workspace of multiple sites, native folder picker, persistent per-site state, light / dark / system theme, file-watcher driven refresh. |
+| Area               | What you can do                                                                                                                                                                                                                                                                                                                   |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Content**        | Browse the `content/` tree, edit `.md` and `.html` files. Schema-driven front-matter form (21 standard Hugo fields curated; custom fields inferred from siblings). Markdown body in CodeMirror, rich Markdown WYSIWYG via Milkdown, rich HTML WYSIWYG via TipTap. New-content wizard with archetype dropdown and language picker. |
+| **Menus**          | Visual editor for `[menu.<name>]` blocks — name / URL / weight / identifier / parent — add, remove, reorder, save through the format-preserving codecs.                                                                                                                                                                           |
+| **Data**           | Browse `data/*` files. CSV opens as a spreadsheet with **resizable columns**; JSON / GeoJSON / YAML / TOML open in a syntax-highlighted editor. Drag-drop CSV / JSON / GeoJSON files from the OS into the panel to import.                                                                                                        |
+| **Media**          | Browse `static/`, `assets/`, and the current page bundle. Thumbnail grid (live image previews via Tauri's asset protocol). Drag-drop OS files in, or pick from the editor's "Insert media" modal. Copy URLs, delete, rename.                                                                                                      |
+| **Theme**          | Edit theme params with a three-tier schema cascade (manifest > defaults > inferred). Browse and edit raw theme source files (layouts / partials / SCSS / JS / archetypes / i18n) with the right CodeMirror language.                                                                                                              |
+| **Site config**    | Curated form for `title`, `baseURL`, `theme`, `paginate`, language settings, and friends. Read-only JSON view for everything else.                                                                                                                                                                                                |
+| **Git**            | Clone (HTTPS or SSH — vendored libssh2), branch switcher / new branch, status, stage / unstage, commit, pull, push, stash, force-pull. No system git required.                                                                                                                                                                    |
+| **Live preview**   | Embedded `hugo server` (kill-on-drop), iframe pane, collapsible Hugo console. Hugo extended is bundled as a Tauri sidecar — no separate install.                                                                                                                                                                                  |
+| **Across the app** | Workspace of multiple sites, native folder picker, persistent per-site state, light / dark / system theme, file-watcher driven refresh.                                                                                                                                                                                           |
 
 ## Install
 
 Pre-built installers are attached to every GitHub Release.
 
-| Platform | Bundle | First-launch notes |
-|----------|--------|--------------------|
-| **macOS** (arm64 + x64) | `.dmg` | Ad-hoc signed, **not notarised**. Right-click → `Open` the first time, or `xattr -dr com.apple.quarantine "/Applications/Hugo Studio.app"`. |
-| **Windows** (x64) | NSIS `.exe` | Standard installer. SmartScreen may warn on the first run; "More info" → "Run anyway". |
-| **Linux** (x64) | `.AppImage` + `.deb` | AppImage runs anywhere; `.deb` for Debian / Ubuntu. |
+| Platform                | Bundle               | First-launch notes                                                                                                                          |
+| ----------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **macOS** (arm64 + x64) | `.dmg`               | Ad-hoc signed, **not notarised**. Right-click → `Open` the first time, or `xattr -dr com.apple.quarantine "/Applications/Hugo Studio.app"`. |
+| **Windows** (x64)       | NSIS `.exe`          | Standard installer. SmartScreen may warn on the first run; "More info" → "Run anyway".                                                      |
+| **Linux** (x64)         | `.AppImage` + `.deb` | AppImage runs anywhere; `.deb` for Debian / Ubuntu.                                                                                         |
 
 Get them from the [latest release](https://github.com/sirmmo/hugo-studio/releases/latest).
 

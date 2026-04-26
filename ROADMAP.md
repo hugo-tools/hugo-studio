@@ -14,35 +14,35 @@ media, git, live preview) on macOS / Windows / Linux.
 
 ### v1.0 cycle — the original M0–M9 plan
 
-| Tag | Theme |
-|-----|-------|
-| **M0** | Tauri 2 + React + TS bootstrap, Specta-typed Rust↔TS bridge, Docker dev image, CI matrix. |
-| **M1** | Workspace of registered sites, native folder picker, persistent state, Hugo config detection (hugo.\* / config.\* / config/\_default/). |
-| **M2** | Site-config editor with format-preserving codecs (toml\_edit, yaml line-patching, preserve\_order JSON). Save of an unchanged field doesn't rewrite the file. |
-| **M3** | Content tree with kind classification (Section / Branch / Leaf / Single), multilingual detection (Mono / Filename / Directory), debounced `notify` file watcher. |
-| **M4** | Schema-driven content editor: 21 standard Hugo fields curated, custom fields inferred from siblings, CodeMirror 6 body editor, atomic save with byte-identical no-op detection. |
-| **M5** | Theme params editor with three-tier schema cascade (manifest > defaults > inferred); save lands in the right file (single-file vs `_default/params.*`). |
-| **M6** | Live preview — embedded `hugo server` with `kill_on_drop`, iframe pane, collapsible Hugo console, parser for the "Web Server is available at" line. |
-| **M7** | Asset import — drag-drop into the editor, bundle / static / assets target picker, sandbox checks, sidebar with insert / delete. |
-| **M8** | New-content wizard with archetype dropdown, language picker for multilingual sites, Go-template stubs (`.Name`, `.Title`, `.Slug`, `.Section`, `.Date`). |
-| **M9 / v1.0.0** | App settings dialog with Hugo binary picker, dark mode, bundle code-splitting. |
+| Tag             | Theme                                                                                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **M0**          | Tauri 2 + React + TS bootstrap, Specta-typed Rust↔TS bridge, Docker dev image, CI matrix.                                                                                       |
+| **M1**          | Workspace of registered sites, native folder picker, persistent state, Hugo config detection (hugo.\* / config.\* / config/\_default/).                                         |
+| **M2**          | Site-config editor with format-preserving codecs (toml_edit, yaml line-patching, preserve_order JSON). Save of an unchanged field doesn't rewrite the file.                     |
+| **M3**          | Content tree with kind classification (Section / Branch / Leaf / Single), multilingual detection (Mono / Filename / Directory), debounced `notify` file watcher.                |
+| **M4**          | Schema-driven content editor: 21 standard Hugo fields curated, custom fields inferred from siblings, CodeMirror 6 body editor, atomic save with byte-identical no-op detection. |
+| **M5**          | Theme params editor with three-tier schema cascade (manifest > defaults > inferred); save lands in the right file (single-file vs `_default/params.*`).                         |
+| **M6**          | Live preview — embedded `hugo server` with `kill_on_drop`, iframe pane, collapsible Hugo console, parser for the "Web Server is available at" line.                             |
+| **M7**          | Asset import — drag-drop into the editor, bundle / static / assets target picker, sandbox checks, sidebar with insert / delete.                                                 |
+| **M8**          | New-content wizard with archetype dropdown, language picker for multilingual sites, Go-template stubs (`.Name`, `.Title`, `.Slug`, `.Section`, `.Date`).                        |
+| **M9 / v1.0.0** | App settings dialog with Hugo binary picker, dark mode, bundle code-splitting.                                                                                                  |
 
 ### v1.1+ — post-1.0 features
 
-| Tag | Theme |
-|-----|-------|
-| **v1.1.0** | Branch switcher + new-branch UI in GitPanel, custom app icon, Hugo bundled as a Tauri sidecar (no separate install). |
-| **v1.1.1** | Dark-mode CodeMirror fix — `@uiw/react-codemirror`'s default `theme="light"` was overriding the CSS variables. |
-| **v1.2.0** | Milkdown WYSIWYG as a third "Rich" editor tab for Markdown content. |
-| **v1.3.0** | Media library — top-level browse / upload / delete for `static/`, `assets/`, and the current bundle. Inline image previews via Tauri's `asset://` protocol. |
-| **v1.4.0** | OS drag-drop into the Media library, `.html` content support (CodeMirror html mode, Rich tab hidden, link insertion uses `<img>`/`<a>` with attribute escaping). |
-| **v1.4.1** | HTML pages land on the Body tab by default; `document::save` no longer corrupts bare-body files when the user adds front matter. |
-| **v1.5.0** | HTML WYSIWYG (TipTap, lazy-loaded), git SSH/HTTPS transports re-enabled, Settings dialog handles long Hugo paths. |
-| **v1.5.1** | Hugo menu editor — visual `[menu.<name>]` editing, add / remove / reorder, save through existing config codecs. |
-| **v1.6.0** | Data file manager — CSV grid + JSON source editor, sandboxed list / read / write / create / delete. |
-| **v1.7.0** | Theme files browser — categorised file rail (layouts / partials / assets / archetypes / i18n / data / static), CodeMirror with html / css / scss / js / json / markdown highlighting. |
-| **v1.7.1–v1.7.3** | Tab layout polish: unified panel shell, fixed Radix `[hidden]` UA-rule override that was leaving inactive tabs in the layout. |
-| **v1.8.0** | CSV grid resizable columns, OS drag-drop of `.csv` / `.json` / `.geojson` files into `data/`. |
+| Tag               | Theme                                                                                                                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **v1.1.0**        | Branch switcher + new-branch UI in GitPanel, custom app icon, Hugo bundled as a Tauri sidecar (no separate install).                                                                  |
+| **v1.1.1**        | Dark-mode CodeMirror fix — `@uiw/react-codemirror`'s default `theme="light"` was overriding the CSS variables.                                                                        |
+| **v1.2.0**        | Milkdown WYSIWYG as a third "Rich" editor tab for Markdown content.                                                                                                                   |
+| **v1.3.0**        | Media library — top-level browse / upload / delete for `static/`, `assets/`, and the current bundle. Inline image previews via Tauri's `asset://` protocol.                           |
+| **v1.4.0**        | OS drag-drop into the Media library, `.html` content support (CodeMirror html mode, Rich tab hidden, link insertion uses `<img>`/`<a>` with attribute escaping).                      |
+| **v1.4.1**        | HTML pages land on the Body tab by default; `document::save` no longer corrupts bare-body files when the user adds front matter.                                                      |
+| **v1.5.0**        | HTML WYSIWYG (TipTap, lazy-loaded), git SSH/HTTPS transports re-enabled, Settings dialog handles long Hugo paths.                                                                     |
+| **v1.5.1**        | Hugo menu editor — visual `[menu.<name>]` editing, add / remove / reorder, save through existing config codecs.                                                                       |
+| **v1.6.0**        | Data file manager — CSV grid + JSON source editor, sandboxed list / read / write / create / delete.                                                                                   |
+| **v1.7.0**        | Theme files browser — categorised file rail (layouts / partials / assets / archetypes / i18n / data / static), CodeMirror with html / css / scss / js / json / markdown highlighting. |
+| **v1.7.1–v1.7.3** | Tab layout polish: unified panel shell, fixed Radix `[hidden]` UA-rule override that was leaving inactive tabs in the layout.                                                         |
+| **v1.8.0**        | CSV grid resizable columns, OS drag-drop of `.csv` / `.json` / `.geojson` files into `data/`.                                                                                         |
 
 ## Up next
 
