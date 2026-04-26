@@ -5,6 +5,8 @@
 > that keep your TOML / YAML / JSON byte-for-byte intact when they don't
 > need to change.
 
+<img width="1281" height="802" alt="image" src="https://github.com/user-attachments/assets/3598e5f5-b4a3-4572-a244-5e43f23b485d" />
+
 [![Latest release](https://img.shields.io/github/v/release/sirmmo/hugo-studio?include_prereleases&display_name=tag&color=blue)](https://github.com/sirmmo/hugo-studio/releases/latest)
 [![Release workflow](https://img.shields.io/github/actions/workflow/status/sirmmo/hugo-studio/release.yml?label=release%20build)](https://github.com/sirmmo/hugo-studio/actions/workflows/release.yml)
 [![CI](https://img.shields.io/github/actions/workflow/status/sirmmo/hugo-studio/build.yml?label=CI)](https://github.com/sirmmo/hugo-studio/actions/workflows/build.yml)
