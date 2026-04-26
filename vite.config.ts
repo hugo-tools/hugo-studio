@@ -21,24 +21,38 @@ export default defineConfig(async () => ({
     chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
-        // Code-splitting (M9): the heaviest dependencies live in their
-        // own vendor chunks so the initial parse cost is amortised
-        // across cached files.
-        manualChunks: {
-          codemirror: [
-            "@uiw/react-codemirror",
-            "@codemirror/lang-markdown",
-            "@codemirror/state",
-            "@codemirror/view",
-          ],
-          radix: [
-            "@radix-ui/react-alert-dialog",
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-tabs",
-            "@radix-ui/react-slot",
-          ],
-          tanstack: ["@tanstack/react-query"],
-          forms: ["react-hook-form", "@hookform/resolvers", "zod"],
+        // Code-splitting: function form because Milkdown pulls in
+        // @milkdown/* + prosemirror-* transitively, and matching only
+        // the top-level package name leaves the transitive deps in the
+        // main chunk. Match by id substring instead.
+        manualChunks(id) {
+          if (
+            id.includes("/@milkdown/") ||
+            id.includes("/prosemirror-") ||
+            id.includes("/@prosemirror/")
+          ) {
+            return "milkdown";
+          }
+          if (
+            id.includes("/@codemirror/") ||
+            id.includes("/@uiw/react-codemirror/") ||
+            id.includes("/@lezer/")
+          ) {
+            return "codemirror";
+          }
+          if (id.includes("/@radix-ui/")) {
+            return "radix";
+          }
+          if (id.includes("/@tanstack/")) {
+            return "tanstack";
+          }
+          if (
+            id.includes("/react-hook-form/") ||
+            id.includes("/@hookform/") ||
+            id.includes("/zod/")
+          ) {
+            return "forms";
+          }
         },
       },
     },

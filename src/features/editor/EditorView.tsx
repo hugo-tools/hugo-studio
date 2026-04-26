@@ -21,6 +21,7 @@ import { AssetImportDialog } from "@/features/assets/AssetImportDialog";
 import { BundleAssetsPanel } from "@/features/assets/BundleAssetsPanel";
 import { FrontMatterForm } from "./FrontMatterForm";
 import { BodyEditor, type BodyEditorHandle } from "./BodyEditor";
+import { RichEditor } from "./RichEditor";
 
 interface Props {
   site: Site;
@@ -208,6 +209,7 @@ export function EditorView({ site, selection }: Props) {
             <TabsList>
               <TabsTrigger value="frontmatter">Front matter</TabsTrigger>
               <TabsTrigger value="body">Body</TabsTrigger>
+              <TabsTrigger value="rich">Rich</TabsTrigger>
             </TabsList>
           </div>
           <TabsContent
@@ -225,6 +227,26 @@ export function EditorView({ site, selection }: Props) {
             className="mt-0 flex h-full flex-1 flex-col overflow-hidden"
           >
             <BodyEditor ref={editorRef} value={body} onChange={setBody} />
+          </TabsContent>
+          <TabsContent
+            value="rich"
+            className="mt-0 flex h-full flex-1 flex-col overflow-hidden"
+          >
+            <div className="border-b bg-muted/30 px-4 py-1.5 text-[10px] text-muted-foreground">
+              Visual editor (Milkdown). Hugo shortcodes pass through as raw
+              text. Switching back to Body may canonicalise the markdown (e.g.
+              `*foo*` ↔ `_foo_`).
+            </div>
+            {/* Re-mount whenever the loaded document path changes so a
+                fresh body string seeds the editor. While the user stays
+                on this content, Crepe owns the in-flight state. */}
+            <div className="flex-1 overflow-hidden">
+              <RichEditor
+                key={selection.path}
+                value={body}
+                onChange={setBody}
+              />
+            </div>
           </TabsContent>
         </Tabs>
         {showAssets && (
