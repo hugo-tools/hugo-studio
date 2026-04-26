@@ -60,7 +60,12 @@ export function MediaLibrary({
   const [staticSubpath, setStaticSubpath] = useState("img");
 
   const queryKey = useMemo(
-    () => ["media", site.id, scope, scope === "bundle" ? bundleContentId : null],
+    () => [
+      "media",
+      site.id,
+      scope,
+      scope === "bundle" ? bundleContentId : null,
+    ],
     [site.id, scope, bundleContentId],
   );
 

@@ -54,20 +54,14 @@ pub fn asset_delete(
 
 #[tauri::command]
 #[specta::specta]
-pub fn asset_list_static(
-    state: State<'_, AppState>,
-    site_id: SiteId,
-) -> AppResult<Vec<AssetRef>> {
+pub fn asset_list_static(state: State<'_, AppState>, site_id: SiteId) -> AppResult<Vec<AssetRef>> {
     let root = site_root(&state, site_id)?;
     assets::list_static(&root)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn asset_list_assets(
-    state: State<'_, AppState>,
-    site_id: SiteId,
-) -> AppResult<Vec<AssetRef>> {
+pub fn asset_list_assets(state: State<'_, AppState>, site_id: SiteId) -> AppResult<Vec<AssetRef>> {
     let root = site_root(&state, site_id)?;
     assets::list_assets(&root)
 }

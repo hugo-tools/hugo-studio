@@ -609,7 +609,10 @@ mod tests {
         let items = list_static(&root).unwrap();
         let names: Vec<_> = items.iter().map(|a| a.name.clone()).collect();
         // Order is by id (forward-slash site-relative).
-        assert_eq!(names, vec!["favicon.ico".to_string(), "hero.jpg".to_string()]);
+        assert_eq!(
+            names,
+            vec!["favicon.ico".to_string(), "hero.jpg".to_string()]
+        );
         let hero = items.iter().find(|a| a.name == "hero.jpg").unwrap();
         assert_eq!(hero.relative_link, "/img/posts/hero.jpg");
         assert_eq!(hero.context_label, "static/img/posts/");
