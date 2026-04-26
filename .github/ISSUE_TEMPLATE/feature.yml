@@ -1,0 +1,71 @@
+name: Feature request
+description: A workflow that should be easier, or a surface that's missing.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! The more we understand the
+        workflow you want to enable, the better the surface we
+        can design.
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What workflow do you want to enable?
+      description: |
+        What are you trying to accomplish? "I want to be able to X
+        without leaving the app" beats "add a button that does Y" —
+        the workflow tells us where to put the surface.
+      placeholder: |
+        I publish posts that always include a banner image. Today
+        I have to drag the image into media, copy the URL, then
+        paste it into the front-matter `cover` field manually.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed surface (optional)
+      description: |
+        If you already have a UI in mind, describe it. If not,
+        leave this blank — we'll figure it out together.
+      placeholder: |
+        Render a thumbnail picker next to the `cover` input in the
+        front-matter form. Click → opens the Media library modal
+        scoped to the current bundle's static + assets.
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: |
+        What workarounds exist today, and why aren't they enough?
+      placeholder: |
+        I drag-drop the file onto the editor and the AssetImportDialog
+        opens. That works, but inserts a markdown image at the caret —
+        I want to set the `cover` *front-matter field* instead.
+    validations:
+      required: false
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Rough scope
+      options:
+        - Polish (a few hours)
+        - Small feature (a day or two)
+        - Medium feature (a week)
+        - Large / cross-cutting (more)
+        - Not sure
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Sanity checks
+      options:
+        - label: I searched existing issues for a similar request.
+          required: true
+        - label: I read [`ROADMAP.md`](https://github.com/sirmmo/hugo-studio/blob/main/ROADMAP.md) to see if this is already planned.
+          required: false

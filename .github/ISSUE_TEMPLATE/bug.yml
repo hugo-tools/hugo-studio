@@ -1,0 +1,82 @@
+name: Bug report
+description: Something doesn't work the way it should.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! The more concrete the steps, the
+        faster we can fix it.
+  - type: input
+    id: version
+    attributes:
+      label: Hugo Studio version
+      description: From the workspace header (or "About"). Tag like `v1.8.0`.
+      placeholder: v1.8.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Windows 10
+        - Windows 11
+        - Linux (AppImage)
+        - Linux (.deb)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: hugo-version
+    attributes:
+      label: Hugo version
+      description: Output of `hugo version` against the binary the app is using (Settings → Hugo binary).
+      placeholder: hugo v0.139.4-extended ...
+    validations:
+      required: false
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: A short description of the bug.
+      placeholder: I clicked X and Y happened, but I expected Z.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: |
+        A numbered list works best. If the bug needs a specific Hugo
+        site to reproduce, link to it (or attach a minimal repro).
+      placeholder: |
+        1. Open Hugo Studio against site X.
+        2. Click "Data" tab.
+        3. Drag a `.csv` file in.
+        4. Observe …
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / error messages
+      description: |
+        If the app showed an error, paste it here. For preview /
+        Hugo errors, the Hugo console at the bottom of the preview
+        pane usually has the details.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Sanity checks
+      options:
+        - label: I'm on the latest release.
+          required: false
+        - label: I searched existing issues for a similar report.
+          required: true

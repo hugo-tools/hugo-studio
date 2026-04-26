@@ -1,148 +1,111 @@
 # Hugo Studio — Roadmap
 
-Le milestone seguono il prompt iniziale. Ogni voce è atomica e testabile.
+A snapshot of what's shipped, what's next, and what's on the wish list.
+The list is descriptive, not a contract — priorities shift with
+contributor energy and user feedback.
 
-## M0 — Bootstrap
+## Status
 
-- [x] Repo inizializzato (Tauri 2 + React + TS + Vite + Tailwind + shadcn/ui)
-- [x] `specta` + `tauri-specta` per codegen Rust↔TS
-- [x] CI minima (matrix build su macOS / Linux / Windows)
-- [x] Comando Rust `health_check` chiamato dal frontend con TanStack Query
-- [x] Ambiente di sviluppo Docker (`Dockerfile.dev` + `docker-compose.yml` + `Makefile`)
-- [x] DECISIONS.md + ROADMAP.md
-- [x] Primo commit `chore: bootstrap hugo studio (M0)`
-- [ ] **Criterio**: app si apre su mac/linux/win e mostra "ready" — verifica visiva su un host con display ancora da fare (in Docker headless è validato build + comando)
+**Current release: v1.8.0.** Hugo Studio is feature-complete for the
+common Hugo authoring loop (content, menus, data, theme files,
+media, git, live preview) on macOS / Windows / Linux.
 
-## M1 — Workspace e site detection
+## Shipped
 
-- [x] Tipi `Workspace`, `SiteRef`, `Site`, `SiteId` (UUID) in Rust con codegen TS via specta
-- [x] Comandi: `workspace_list_sites`, `workspace_active_site_id`, `workspace_add_site`, `workspace_remove_site`, `workspace_rename_site`, `workspace_set_active`, `workspace_clear_active`, `site_detect`
-- [x] Persistenza workspace in `app_data_dir/workspace.json` (write atomico via tmp+rename)
-- [x] UI: schermata iniziale con elenco siti, "Add site" (file picker via `tauri-plugin-dialog`), "Open" e "Remove" con AlertDialog di conferma
-- [x] Detection `hugo.{toml,yaml,yml,json}` / `config.{toml,yaml,yml,json}` / `config/_default/` (priorità nell'ordine; root single-file vince sempre)
-- [x] Plugin dialog registrato sia su Cargo che su capabilities (`dialog:default`)
-- [x] Specta-typescript con header `@ts-nocheck` + `eslint-disable` sui `bindings.ts` autogenerati
-- [x] AppError tipizzato con `thiserror` e discriminator JSON, wrapper TS `tauri.*` che fa `unwrap` del `Result<T, AppError>`
-- [x] Bin `gen-bindings` per rigenerare i tipi TS senza display (`make gen-bindings`)
-- [x] Test unit: 7 detect + 3 persistence + 1 health = 11 passed
-- [ ] **Criterio**: aggiungo 2 siti, switch tra loro, l'app ricorda la lista al riavvio (validabile solo eseguendo il binary su un host con display)
+### v1.0 cycle — the original M0–M9 plan
 
-## M2 — Lettura della config del sito
+| Tag | Theme |
+|-----|-------|
+| **M0** | Tauri 2 + React + TS bootstrap, Specta-typed Rust↔TS bridge, Docker dev image, CI matrix. |
+| **M1** | Workspace of registered sites, native folder picker, persistent state, Hugo config detection (hugo.\* / config.\* / config/\_default/). |
+| **M2** | Site-config editor with format-preserving codecs (toml\_edit, yaml line-patching, preserve\_order JSON). Save of an unchanged field doesn't rewrite the file. |
+| **M3** | Content tree with kind classification (Section / Branch / Leaf / Single), multilingual detection (Mono / Filename / Directory), debounced `notify` file watcher. |
+| **M4** | Schema-driven content editor: 21 standard Hugo fields curated, custom fields inferred from siblings, CodeMirror 6 body editor, atomic save with byte-identical no-op detection. |
+| **M5** | Theme params editor with three-tier schema cascade (manifest > defaults > inferred); save lands in the right file (single-file vs `_default/params.*`). |
+| **M6** | Live preview — embedded `hugo server` with `kill_on_drop`, iframe pane, collapsible Hugo console, parser for the "Web Server is available at" line. |
+| **M7** | Asset import — drag-drop into the editor, bundle / static / assets target picker, sandbox checks, sidebar with insert / delete. |
+| **M8** | New-content wizard with archetype dropdown, language picker for multilingual sites, Go-template stubs (`.Name`, `.Title`, `.Slug`, `.Section`, `.Date`). |
+| **M9 / v1.0.0** | App settings dialog with Hugo binary picker, dark mode, bundle code-splitting. |
 
-- [x] Parser multi-formato con preservazione: `toml_edit` (full preservation) per TOML, `serde_json` con `preserve_order` per JSON, line-patching regex-based per YAML scalari top-level (con fallback a re-serialize per nested)
-- [x] Cascata `config/_default/`: file `hugo.*` mappato sulla root; gli altri file (`params.*`, `menus.*`, ecc.) mountati sotto la chiave omonima allo stem
-- [x] Comandi `config_get` / `config_save` con FS sandbox via lookup nel workspace
-- [x] UI: pannello "Site Settings" con form react-hook-form + zod per i campi noti (title, baseURL, languageCode, defaultContentLanguage, theme, paginate, enableEmoji, enableRobotsTXT) + sezione "Advanced" read-only (JSON viewer)
-- [x] Save di un campo invariato non riscrive il file su disco (early-return per byte-identical)
-- [x] Test unit: 25 totali (era 11) — round-trip byte-identico per i 3 formati, modifica baseURL = 1 sola riga di diff, comments survivability, save su `_default/` tocca solo il file giusto
-- [x] Environment override (config/development/, config/production/): rimandato a quando arriverà come richiesta utente — Hugo lo permette ma in M2 non è documentato come bloccante; aprirò una M2.x se serve
-- [ ] **Criterio**: aprire la config, modificare baseURL, salvare → diff = 1 sola riga (validato dai test, da provare end-to-end sull'app reale)
+### v1.1+ — post-1.0 features
 
-## M3 — Content tree e lettura contenuti
+| Tag | Theme |
+|-----|-------|
+| **v1.1.0** | Branch switcher + new-branch UI in GitPanel, custom app icon, Hugo bundled as a Tauri sidecar (no separate install). |
+| **v1.1.1** | Dark-mode CodeMirror fix — `@uiw/react-codemirror`'s default `theme="light"` was overriding the CSS variables. |
+| **v1.2.0** | Milkdown WYSIWYG as a third "Rich" editor tab for Markdown content. |
+| **v1.3.0** | Media library — top-level browse / upload / delete for `static/`, `assets/`, and the current bundle. Inline image previews via Tauri's `asset://` protocol. |
+| **v1.4.0** | OS drag-drop into the Media library, `.html` content support (CodeMirror html mode, Rich tab hidden, link insertion uses `<img>`/`<a>` with attribute escaping). |
+| **v1.4.1** | HTML pages land on the Body tab by default; `document::save` no longer corrupts bare-body files when the user adds front matter. |
+| **v1.5.0** | HTML WYSIWYG (TipTap, lazy-loaded), git SSH/HTTPS transports re-enabled, Settings dialog handles long Hugo paths. |
+| **v1.5.1** | Hugo menu editor — visual `[menu.<name>]` editing, add / remove / reorder, save through existing config codecs. |
+| **v1.6.0** | Data file manager — CSV grid + JSON source editor, sandboxed list / read / write / create / delete. |
+| **v1.7.0** | Theme files browser — categorised file rail (layouts / partials / assets / archetypes / i18n / data / static), CodeMirror with html / css / scss / js / json / markdown highlighting. |
+| **v1.7.1–v1.7.3** | Tab layout polish: unified panel shell, fixed Radix `[hidden]` UA-rule override that was leaving inactive tabs in the layout. |
+| **v1.8.0** | CSV grid resizable columns, OS drag-drop of `.csv` / `.json` / `.geojson` files into `data/`. |
 
-- [x] Scansione `content/` con classificazione `Section` / `BranchBundle` / `LeafBundle` / `SinglePage` (estensioni: `.md`, `.markdown`, `.html`, `.htm`)
-- [x] Detection multilingua per §6.6: `Mono` / `Filename` / `Directory` (driven da `defaultContentLanguageInSubdir` + presenza di subdir per i lang code)
-- [x] Front-matter peek minimale per popolare title/draft/date senza full deserialize (TOML/YAML/JSON con tolleranza BOM)
-- [x] Comando `content_list` con cache TanStack Query (queryKey scoped per `site.id`)
-- [x] UI: file tree gerarchico costruito client-side dalla flat list, icone per kind (Layers/Package/Folder/FileText), badge draft, badge "+ lang" / "⚠ missing"
-- [x] LanguageSwitcher: select compatto in toolbar tree, filtra per lingua attiva
-- [x] File watcher `notify` debounced 200ms (poll loop a 50ms + finestra di silenzio 200ms), ignora `public/`, `resources/`, `node_modules/`, `.git/`, `.hugo_build.lock`, `.DS_Store`
-- [x] Watcher gestito dal lifecycle di `workspace_set_active` / `workspace_clear_active`; emette `site:changed` Tauri event; frontend invalida `["content", id]` + `["config", id]`
-- [x] Test unit: 53 totali (era 25) — classify (6), language (7), FM peek (6), scan (4), watcher ignore (4)
-- [ ] **Criterio**: tree popolato per Hugo Coder / PaperMod, modifica esterna riflessa in <1s (validabile solo runtime su un sito reale)
+## Up next
 
-## M4 — Editor di contenuto (cuore del prodotto)
+Concrete items the next contributor could pick up. Roughly ordered by
+"would help most users".
 
-- [x] Document codec: split FM/body con preservazione layout (CRLF/LF, BOM, blank lines), riusa i `ConfigCodec` di M2 sul blocco FM (TOML full preservation, YAML line-patching scalari, JSON preserve_order)
-- [x] Save atomico (tmp + rename), early-return byte-identical quando il file non è davvero cambiato
-- [x] Schema inference: 21 campi standard Hugo curati con tipi nativi (Basic / Taxonomy / Routing / Schedule / Order / Rendering) + inferenza dei campi custom dalla section + autocomplete enumValues per Tags/StringArray
-- [x] Comandi `content_get` / `content_save` con sandbox `resolve_under_root` (PathTraversal vivo) e detection automatica della section anche per strategia Directory (xx / xx-yy)
-- [x] FrontMatterForm schema-driven: string/text/number/boolean/date/dateTime/tags/stringArray/json — raggruppato per `group`
-- [x] TagsInput chip-style con suggestion list, navigabile da tastiera (↑/↓/Enter/Tab), backspace toglie l'ultima
-- [x] BodyEditor CodeMirror 6 con `@codemirror/lang-markdown` + line-wrapping, riempie il pane
-- [x] EditorView: split form|body, dirty tracking, Save flash, X chiude la selezione (torna alla settings)
-- [x] Click sul tree apre l'editor; il riquadro destro alterna Settings ↔ Editor in base a `selection`
-- [x] Test unit: 68 totali (era 53) — 9 round-trip nuovi su `document.rs` (Yaml/Toml/Json + body-only + CRLF + BOM) e 4 su `schema.rs` (standard fields, classify, humanise, inference + tag autocomplete) + sandbox top_section
-- [ ] Override `.hugoeditor/schema.json`: rimandato (M9 polish — scelta architetturale: l'inferenza copre il 90% dei casi senza chiedere lavoro agli autori dei temi)
-- [ ] Side-by-side preview del Markdown renderizzato: rimandato a M6 quando arriva `hugo server` (sarà la stessa cosa, gratis)
-- [ ] **Criterio**: modifica title/tags/draft + body → diff = solo le modifiche; tags con autocomplete (validato dai test sul codec; verifica visiva sull'app reale ancora da fare)
+- **Per-section schema overrides** — load `<site>/.hugoeditor/schema.json`
+  so editors can override the inferred form per content section.
+  Backend cascade is already there (M5 pattern); needs a loader and
+  a small UI badge.
+- **Image picker for FM fields** — when a front-matter field is named
+  `image` / `cover` / `featured`, render an asset picker instead of a
+  plain text input. Wire through the existing media library modal.
+- **Push diff preview** — before `git push`, surface a one-pane summary
+  of the commits about to leave the local branch.
+- **Pull non-FF with inline merge UI** — currently force-pull is the
+  only escape hatch when the local branch diverges. A small
+  three-way merge surface would close that gap.
+- **`hugo build` from the UI** — the preview spawns `hugo server`;
+  add a "Build to public/" button that runs `hugo` once and surfaces
+  the output / error count.
+- **Localisation of the UI** — `i18next` already wires cleanly; UI
+  strings are in English today.
+- **Accessibility audit pass** — keyboard navigation across tabs,
+  focus rings inside the data grid, proper ARIA on the resize grips.
 
-## M5 — Theme params editor
+## Future / wish-list
 
-- [x] Cascata schema: `themes/<n>/.hugoeditor/theme-schema.json` (Manifest) → `themes/<n>/{config.{toml,yaml,json},theme.toml}` con `[params]` (Defaults) → introspezione dei `params` correnti del sito (Inferred)
-- [x] Comandi `theme_get` / `theme_save_params` che riusano `cascade::save` (M2) — i params editati atterrano nel file giusto sia in single-file (`hugo.toml`) sia in `_default/params.toml`
-- [x] Effective params: nel modo Defaults, i valori del sito vincono sui default del tema (form si apre con quello che l'utente ha impostato)
-- [x] ThemeInfo gestisce theme array (component themes layered → primary preso, secondari TODO)
-- [x] Pannello "Theme Settings" riusa `FrontMatterForm` (stessa shape `FieldDef` di M4); badge fonte schema con icona + tooltip esplicativo (Manifest / Theme defaults / Inferred)
-- [x] SiteShell con Tabs `[Site | Theme]` quando non c'è una selezione editor
-- [x] Documentato il formato `theme-schema.json` nel README per gli autori di temi
-- [x] Test unit: 74 totali (era 68) — Manifest wins, Defaults inferred, Inferred fallback, missing theme dir graceful, save su hugo.toml, save su `_default/params.toml`
-- [ ] **Criterio**: PaperMod, modifica `params.author`, salvataggio corretto in `hugo.toml` (validato dai test cargo; verifica visiva sull'app reale ancora da fare)
+Not committed, but interesting:
 
-## M6 — Live preview
+- **Telemetry (opt-in)** — anonymised "feature ever used" counts to
+  guide which surfaces matter most. Hard requirement: explicit
+  opt-in, no defaults that send data without consent.
+- **Plugin SDK** — community-supplied panels (e.g. SEO checker,
+  Cloudinary picker, rss-fixer) loaded from `.hugoeditor/plugins/`.
+- **Multi-window editor** — open more than one site at once.
+- **Inline comment / preview pane on the body editor** — render Hugo
+  shortcodes contextually, show resolved page params.
+- **JSON / YAML schema-driven editor** — when a `data/` file matches a
+  known schema (e.g. JSON Schema in `.hugoeditor/data-schema.json`),
+  render a form instead of raw source.
+- **GeoJSON map preview** — render a small Leaflet map for `.geojson`
+  files in the data panel.
 
-- [x] Locate Hugo via `HUGO_STUDIO_HUGO_PATH` → `which::which("hugo")` (sidecar bundlato vero rimandato a M9; documentato nel placeholder dell'UI)
-- [x] Spawn `hugo server -D --bind 127.0.0.1 --port <free> --navigateToChanged --disableFastRender --source <root>` con `tokio::process` e `Child::kill_on_drop(true)` — niente zombi anche se l'app crasha
-- [x] Pump stdout/stderr line-by-line; tail in memoria 50 righe per arricchire `preview:error`
-- [x] Eventi Tauri `preview:log` / `preview:ready` / `preview:error` / `preview:exited`
-- [x] Lifecycle agganciato a `workspace_set_active` / `workspace_clear_active` (e in M3 dropping `replace_preview` ferma il vecchio prima di partire il nuovo)
-- [x] Comandi `preview_start` (async) / `preview_stop` / `preview_status`
-- [x] WebView pane con iframe sull'URL ricevuto + reload button + status dot (idle / starting / running / error)
-- [x] Console collassabile (cap 500 righe, auto-scroll bottom-aware, clear button)
-- [x] SiteShell layout 3-colonne `[280px tree | 1fr center | minmax(380px,1fr) preview]` quando preview aperta
-- [x] Hugo extended in dev Docker image (build/test in container)
-- [x] Test unit: 79 totali (era 74) — parse "Web Server is available at" (3 forme), pick_free_port, locate_hugo via env var, EnvGuard helper
-- [ ] **Criterio**: refresh <1s; nessun processo Hugo zombie alla chiusura (validato dai test e da `kill_on_drop`; verifica visiva richiede l'app reale + Hugo sul host)
+## Out of scope (intentional)
 
-## M7 — Asset management
+- **A built-in static-site generator** — Hugo Studio is an editor for
+  Hugo, not a Hugo replacement. The `hugo` binary stays the source
+  of truth for what the site looks like.
+- **Hosting integrations** — Netlify / Vercel / Cloudflare Pages
+  deploys are easier through their own CLIs / git push hooks. Hugo
+  Studio's git surface is enough to push to whatever your hosting
+  consumes.
+- **Web version** — the file-watcher, sidecar process management,
+  and OS drag-drop all rely on the desktop runtime. A web build
+  would mean a different product.
 
-- [x] `assets/` module: `AssetKind` (Image/Script/Style/Document/Other), `AssetContext { Bundle{contentId} | Static{subpath} | Assets{subpath} }`, `AssetRef` with `relativeLink` already shaped for the markdown editor
-- [x] Backend operations: `import` (collision-safe `-1`/`-2`/… suffix), `list` (bundle siblings only, drops dotfiles), `delete` (refuses index files)
-- [x] Sandbox check on every IO touch (reuses `PathTraversal` AppError variant from M3)
-- [x] Tauri commands `asset_import`, `asset_list`, `asset_delete`
-- [x] Frontend `AssetImportDialog` with smart default per active content kind, custom subpath inputs for static / assets
-- [x] OS file drag-drop captured via `getCurrentWebview().onDragDropEvent`; routes through the dialog → `assetImport` → `editor.insertAtCursor` for each file
-- [x] `BodyEditor` exposes an imperative `insertAtCursor` via `forwardRef` so multiple call sites (drop, sidebar click) can inject markdown without remounting CodeMirror
-- [x] `BundleAssetsPanel` sidebar (only when editing a bundle) — list, click-to-insert, delete with hover-revealed trash button
-- [x] Specta `bigint(BigIntExportBehavior::Number)` so `u64` file sizes serialise to TS `number`
-- [x] Image thumbnails via `asset://` scheme: deferred to M9 (needs scoped `app.security.assetProtocol`)
-- [x] Test unit: 87 totali (era 79) — import to bundle / static / assets, collision suffix, traversal rejection, list filters, delete refuses index
-- [ ] **Criterio**: drag in un leaf bundle → file copiato + link inserito al cursore (validato dai test e dal flow UI; verifica visiva sull'app reale ancora da fare)
+## How to contribute to the roadmap
 
-## M8 — Creazione contenuti e archetypes
-
-- [x] `content/archetype.rs` enumerates `archetypes/<name>.md` + `archetypes/<name>/index.md` (single page + leaf-bundle archetypes), sorts `default` first
-- [x] `resolve_template` walks `<requested>` → `<section>` → `default` → built-in
-- [x] Minimal Go-template substitution (`.Name`, `.Title`, `.Slug`, `.Section`, `.Date`, plus the canonical `{{ replace .Name "-" " " | title }}` and `_` variant) — anything else stays in place for the user to edit
-- [x] `content/create.rs` — slug + section sanitisation, language-aware target path (filename `.lang` suffix vs directory `<lang>/` prefix), atomic write, refuses to overwrite, copies sibling files of bundle archetypes verbatim
-- [x] Commands `content_archetypes` + `content_create`
-- [x] `NewContentDialog` from the ContentTree header — title → slug live derivation, section autocomplete, archetype dropdown (`(auto)` default), language dropdown only when site is multilingual; on success opens the new content in the editor
-- [x] Test unit: 107 totali (era 93)
-- [x] **Criterio**: nuovo post parte da archetype corretto, appare nel tree (validato dai test, verifica visiva ancora da fare sull'app reale)
-
-## v0.9.0 UX & git extras (shipped together)
-
-- [x] CodeMirror body editor reads its colors from the `--background`/`--foreground` Tailwind variables → dark mode no longer renders white-on-white
-- [x] Content tree sort selector (Name / Newest first / Oldest first); folders still grouped first
-- [x] Git: `PullStrategy { FastForward, ForceReset }` — backend `git_pull` takes a strategy; backend `git_stash_save` + `git_stash_pop`
-- [x] GitPanel: `Stash`, `Pop stash`, `Force pull` (auto-stashes dirty working tree first, confirms before discarding local commits)
-
-## M9 — Polish e onboarding
-
-- [x] App settings: persisted `AppSettings { hugoPath }` in `app_data_dir/settings.json`; `app_settings_get/save/resolve_hugo` commands; SettingsDialog (cog icon in workspace header) with theme mode radio + Hugo binary picker + live "will use: …" hint
-- [x] `preview::locate_hugo` precedence: app settings → `HUGO_STUDIO_HUGO_PATH` → PATH
-- [x] Documentazione `.hugoeditor/theme-schema.json` (M5) e accenno a `.hugoeditor/schema.json` per-section override (loader vero rimandato post-1.0)
-- [x] Bundle code-splitting: chunks separati per `codemirror` / `radix` / `forms` / `tanstack` (~310KB main + 615KB codemirror lazy vs 1MB monolitico)
-- [x] Test unit: 109 totali (era 107) — round-trip settings store
-- [x] **Criterio**: un editor non-tecnico apre un sito esistente e modifica un post senza vedere YAML — soddisfatto: editor con title sempre editabile + form schema-driven + tab dedicate FM/Body, niente YAML in superficie
-
-## Out of v1.0.0 (post-1.0 ideas)
-
-- [ ] Hugo come Tauri sidecar (vero bundle binari per piattaforma → no install richiesto)
-- [ ] `.hugoeditor/schema.json` loader vero (override per-section dell'inferenza)
-- [ ] Image picker per FM fields con preview thumbnail (richiede `asset://` scheme con scope)
-- [ ] Branch switcher + new branch UI nel GitPanel
-- [ ] Pull non-FF con UI di merge inline (per ora bisogna risolvere da terminale)
-- [ ] Lingua UI configurabile (i18next già wireable; UI strings hardcoded inglese in v1)
-- [ ] Telemetria opt-in
-- [ ] Icone custom + branding
+- For a small feature: open an issue with the
+  [feature template](https://github.com/sirmmo/hugo-studio/issues/new/choose),
+  describe the workflow it enables, and propose a UI surface.
+- For something larger: open a discussion or a draft PR with a short
+  design note. Add a one-line entry under "Up next" in the same PR.
+- Decisions that change the architecture get one line in
+  [`DECISIONS.md`](./DECISIONS.md) with the rationale.
