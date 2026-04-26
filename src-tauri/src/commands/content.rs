@@ -5,7 +5,7 @@ use specta::Type;
 use tauri::State;
 
 use crate::config::cascade;
-use crate::content::archetype::{self, Archetype};
+use crate::content::archetype::{self, Archetype, ArchetypeContent, ArchetypeKind};
 use crate::content::create::{self as create_content, CreateOptions, CreatedContent};
 use crate::content::document::{self, BodyFormat, FrontMatterFormat};
 use crate::content::scan::{self, ContentScanResult};
@@ -69,6 +69,53 @@ pub fn content_archetypes(
 ) -> AppResult<Vec<Archetype>> {
     let root = site_root(&state, site_id)?;
     archetype::list(&root)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn archetype_read(
+    state: State<'_, AppState>,
+    site_id: SiteId,
+    name: String,
+) -> AppResult<ArchetypeContent> {
+    let root = site_root(&state, site_id)?;
+    archetype::read(&root, &name)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn archetype_write(
+    state: State<'_, AppState>,
+    site_id: SiteId,
+    name: String,
+    text: String,
+) -> AppResult<ArchetypeContent> {
+    let root = site_root(&state, site_id)?;
+    archetype::write(&root, &name, &text)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn archetype_create(
+    state: State<'_, AppState>,
+    site_id: SiteId,
+    name: String,
+    kind: ArchetypeKind,
+    text: Option<String>,
+) -> AppResult<ArchetypeContent> {
+    let root = site_root(&state, site_id)?;
+    archetype::create(&root, &name, kind, text.as_deref())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn archetype_delete(
+    state: State<'_, AppState>,
+    site_id: SiteId,
+    name: String,
+) -> AppResult<()> {
+    let root = site_root(&state, site_id)?;
+    archetype::delete(&root, &name)
 }
 
 #[tauri::command]

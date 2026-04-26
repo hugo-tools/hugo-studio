@@ -15,6 +15,8 @@ import type {
   CommitResult,
   ContentEditPayload,
   ContentScanResult,
+  ArchetypeContent,
+  ArchetypeKind,
   CreateOptions,
   CreatedContent,
   DataFile,
@@ -66,6 +68,23 @@ export const tauri = {
     unwrap(commands.contentList(siteId)),
   contentArchetypes: (siteId: SiteId): Promise<Archetype[]> =>
     unwrap(commands.contentArchetypes(siteId)),
+  archetypeRead: (siteId: SiteId, name: string): Promise<ArchetypeContent> =>
+    unwrap(commands.archetypeRead(siteId, name)),
+  archetypeWrite: (
+    siteId: SiteId,
+    name: string,
+    text: string,
+  ): Promise<ArchetypeContent> =>
+    unwrap(commands.archetypeWrite(siteId, name, text)),
+  archetypeCreate: (
+    siteId: SiteId,
+    name: string,
+    kind: ArchetypeKind,
+    text: string | null = null,
+  ): Promise<ArchetypeContent> =>
+    unwrap(commands.archetypeCreate(siteId, name, kind, text)),
+  archetypeDelete: (siteId: SiteId, name: string): Promise<null> =>
+    unwrap(commands.archetypeDelete(siteId, name)),
   contentCreate: (
     siteId: SiteId,
     options: CreateOptions,

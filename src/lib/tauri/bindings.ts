@@ -93,6 +93,38 @@ async configSave(siteId: SiteId, merged: JsonValue) : Promise<Result<LoadedConfi
     else return { status: "error", error: e  as any };
 }
 },
+async archetypeCreate(siteId: SiteId, name: string, kind: ArchetypeKind, text: string | null) : Promise<Result<ArchetypeContent, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("archetype_create", { siteId, name, kind, text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async archetypeDelete(siteId: SiteId, name: string) : Promise<Result<null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("archetype_delete", { siteId, name }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async archetypeRead(siteId: SiteId, name: string) : Promise<Result<ArchetypeContent, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("archetype_read", { siteId, name }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async archetypeWrite(siteId: SiteId, name: string, text: string) : Promise<Result<ArchetypeContent, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("archetype_write", { siteId, name, text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async contentArchetypes(siteId: SiteId) : Promise<Result<Archetype[], AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("content_archetypes", { siteId }) };
@@ -450,6 +482,14 @@ name: string;
  * the archetype file itself (for single pages).
  */
 path: string; kind: ContentKind }
+export type ArchetypeContent = { name: string; kind: ContentKind; path: string; text: string }
+/**
+ * Kind picked when the user creates a new archetype. Mirrors the
+ * content kinds Hugo cares about for templates: a single file, a
+ * leaf bundle (`<name>/index.md`) or a branch bundle
+ * (`<name>/_index.md`).
+ */
+export type ArchetypeKind = "single" | "leafBundle" | "branchBundle"
 export type AssetContext = 
 /**
  * Co-locate the file inside the bundle directory of `content_id`.

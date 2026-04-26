@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { describeError, tauri, type Site } from "@/lib/tauri";
 import { useWorkspaceStore } from "@/store/workspace";
+import { ArchetypesPanel } from "@/features/archetypes/ArchetypesPanel";
 import { ContentTree } from "@/features/content-tree/ContentTree";
 import { DataLibrary } from "@/features/data/DataLibrary";
 import { EditorView } from "@/features/editor/EditorView";
@@ -129,6 +130,7 @@ export function SiteShell({ site }: Props) {
                   <TabsTrigger value="media">Media</TabsTrigger>
                   <TabsTrigger value="menus">Menus</TabsTrigger>
                   <TabsTrigger value="data">Data</TabsTrigger>
+                  <TabsTrigger value="archetypes">Archetypes</TabsTrigger>
                   <TabsTrigger value="git">Git</TabsTrigger>
                 </TabsList>
               </div>
@@ -188,6 +190,12 @@ export function SiteShell({ site }: Props) {
                 className="mt-0 flex flex-1 flex-col overflow-hidden"
               >
                 <DataLibrary site={site} />
+              </TabsContent>
+              <TabsContent
+                value="archetypes"
+                className="mt-0 flex flex-1 flex-col overflow-hidden"
+              >
+                <ArchetypesPanel site={site} />
               </TabsContent>
               <TabsContent
                 value="git"
