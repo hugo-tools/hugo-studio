@@ -61,6 +61,22 @@ async assetList(siteId: SiteId, contentId: string | null) : Promise<Result<Asset
     else return { status: "error", error: e  as any };
 }
 },
+async assetListAssets(siteId: SiteId) : Promise<Result<AssetRef[], AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("asset_list_assets", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async assetListStatic(siteId: SiteId) : Promise<Result<AssetRef[], AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("asset_list_static", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async configGet(siteId: SiteId) : Promise<Result<LoadedConfig, AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("config_get", { siteId }) };

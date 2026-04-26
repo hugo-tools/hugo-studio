@@ -34,6 +34,8 @@ pub fn make_specta_builder() -> Builder<tauri::Wry> {
         commands::assets::asset_delete,
         commands::assets::asset_import,
         commands::assets::asset_list,
+        commands::assets::asset_list_assets,
+        commands::assets::asset_list_static,
         commands::config::config_get,
         commands::config::config_save,
         commands::content::content_archetypes,

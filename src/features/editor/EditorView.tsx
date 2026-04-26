@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { UnlistenFn } from "@tauri-apps/api/event";
-import { Save, X } from "lucide-react";
+import { ImagePlus, Save, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import {
 import { useWorkspaceStore, type EditorSelection } from "@/store/workspace";
 import { AssetImportDialog } from "@/features/assets/AssetImportDialog";
 import { BundleAssetsPanel } from "@/features/assets/BundleAssetsPanel";
+import { MediaPickerDialog } from "@/features/media/MediaPickerDialog";
 import { FrontMatterForm } from "./FrontMatterForm";
 import { BodyEditor, type BodyEditorHandle } from "./BodyEditor";
 import { RichEditor } from "./RichEditor";
@@ -47,6 +48,7 @@ export function EditorView({ site, selection }: Props) {
   // resolves, then routed through assetImport one by one.
   const [pendingFiles, setPendingFiles] = useState<string[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!doc.data) return;
@@ -166,6 +168,16 @@ export function EditorView({ site, selection }: Props) {
             <Button
               type="button"
               size="sm"
+              variant="outline"
+              onClick={() => setMediaPickerOpen(true)}
+              title="Browse media and insert a link at the caret"
+            >
+              <ImagePlus className="size-4" />
+              Insert media
+            </Button>
+            <Button
+              type="button"
+              size="sm"
               disabled={!dirty || save.isPending}
               onClick={() => save.mutate()}
             >
@@ -268,6 +280,15 @@ export function EditorView({ site, selection }: Props) {
         bundleAvailable={bundleAvailable}
         bundleLabel={bundleLabel}
         onConfirm={(ctx) => importAssets.mutate(ctx)}
+      />
+
+      <MediaPickerDialog
+        open={mediaPickerOpen}
+        onOpenChange={setMediaPickerOpen}
+        site={site}
+        bundleContentId={bundleContentId}
+        bundleLabel={bundleLabel}
+        onSelect={(a) => editorRef.current?.insertAtCursor(linkFor(a))}
       />
     </div>
   );

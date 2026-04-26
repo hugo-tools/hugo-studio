@@ -91,6 +91,10 @@ export const tauri = {
     unwrap(commands.assetImport(siteId, source, targetContext)),
   assetList: (siteId: SiteId, contentId: string | null): Promise<AssetRef[]> =>
     unwrap(commands.assetList(siteId, contentId)),
+  assetListStatic: (siteId: SiteId): Promise<AssetRef[]> =>
+    unwrap(commands.assetListStatic(siteId)),
+  assetListAssets: (siteId: SiteId): Promise<AssetRef[]> =>
+    unwrap(commands.assetListAssets(siteId)),
   assetDelete: (siteId: SiteId, assetId: string): Promise<null> =>
     unwrap(commands.assetDelete(siteId, assetId)),
   gitStatus: (siteId: SiteId): Promise<GitStatus> =>

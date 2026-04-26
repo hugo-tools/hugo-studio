@@ -148,6 +148,12 @@ pub fn import(site_root: &Path, source: &Path, context: &AssetContext) -> AppRes
     })
 }
 
+/// Maximum directory depth walked by [`list_static`] / [`list_assets`].
+/// Hugo sites with deep nested asset trees (16+) are extremely rare, and
+/// capping protects against pathological symlink loops without needing
+/// per-directory loop detection.
+const MEDIA_WALK_MAX_DEPTH: usize = 16;
+
 /// Enumerate assets associated with `content_id` (the bundle's index
 /// path) — only non-content sibling files. With `content_id == None`
 /// this is intentionally empty for v1; a global "all assets" view is
@@ -192,6 +198,107 @@ pub fn list(site_root: &Path, content_id: Option<&str>) -> AppResult<Vec<AssetRe
     }
     out.sort_by(|a, b| a.name.cmp(&b.name));
     Ok(out)
+}
+
+/// Recursively walk `<site>/static/` and return every regular file as an
+/// [`AssetRef`] suitable for the media library. The `relative_link`
+/// uses Hugo's URL convention (`/<rel>` from the static root) so the
+/// frontend can drop the string straight into markdown.
+pub fn list_static(site_root: &Path) -> AppResult<Vec<AssetRef>> {
+    let root = site_root.join("static");
+    list_under(site_root, &root, |rel| format!("/{rel}"))
+}
+
+/// Recursively walk `<site>/assets/`. The `relative_link` is the path
+/// relative to `assets/` — what `resources.Get` takes. Surfacing it as
+/// a media item is intentional even though there's no auto-link the
+/// editor can insert (assets need a Hugo Pipes call); browsing /
+/// previewing / deleting is still useful.
+pub fn list_assets(site_root: &Path) -> AppResult<Vec<AssetRef>> {
+    let root = site_root.join("assets");
+    list_under(site_root, &root, |rel| rel.to_string())
+}
+
+fn list_under(
+    site_root: &Path,
+    root: &Path,
+    rel_to_link: impl Fn(&str) -> String,
+) -> AppResult<Vec<AssetRef>> {
+    let mut out = Vec::new();
+    if !root.is_dir() {
+        return Ok(out);
+    }
+    sandbox_check(site_root, root)?;
+    walk_collect(site_root, root, root, 0, &rel_to_link, &mut out)?;
+    out.sort_by(|a, b| a.id.cmp(&b.id));
+    Ok(out)
+}
+
+fn walk_collect(
+    site_root: &Path,
+    walk_root: &Path,
+    dir: &Path,
+    depth: usize,
+    rel_to_link: &dyn Fn(&str) -> String,
+    out: &mut Vec<AssetRef>,
+) -> AppResult<()> {
+    if depth > MEDIA_WALK_MAX_DEPTH {
+        return Ok(());
+    }
+    for entry in std::fs::read_dir(dir)? {
+        let entry = entry?;
+        let name = entry.file_name();
+        let name_str = name.to_string_lossy();
+        if name_str.starts_with('.') {
+            continue;
+        }
+        let p = entry.path();
+        let ft = entry.file_type()?;
+        if ft.is_dir() {
+            walk_collect(site_root, walk_root, &p, depth + 1, rel_to_link, out)?;
+            continue;
+        }
+        if !ft.is_file() {
+            continue;
+        }
+        let metadata = entry.metadata()?;
+        let rel_under_root = p
+            .strip_prefix(walk_root)
+            .map(|r| r.display().to_string().replace('\\', "/"))
+            .unwrap_or_else(|_| name_str.to_string());
+        let context_label = match p
+            .parent()
+            .and_then(|d| d.strip_prefix(walk_root).ok())
+            .map(|r| r.display().to_string().replace('\\', "/"))
+        {
+            Some(s) if s.is_empty() => format!(
+                "{}/",
+                walk_root
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default()
+            ),
+            Some(s) => format!(
+                "{}/{}/",
+                walk_root
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default(),
+                s
+            ),
+            None => "".into(),
+        };
+        out.push(AssetRef {
+            id: site_relative_id(site_root, &p),
+            name: name_str.into_owned(),
+            path: p.display().to_string(),
+            relative_link: rel_to_link(&rel_under_root),
+            kind: AssetKind::from_path(&p),
+            size: metadata.len(),
+            context_label,
+        });
+    }
+    Ok(())
 }
 
 pub fn delete(site_root: &Path, asset_id: &str) -> AppResult<()> {
@@ -489,6 +596,44 @@ mod tests {
             AppError::Internal(msg) => assert!(msg.contains("index")),
             other => panic!("expected Internal, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn list_static_walks_recursively_and_emits_url_links() {
+        let (_t, root) = site();
+        let img_dir = root.join("static/img/posts");
+        fs::create_dir_all(&img_dir).unwrap();
+        fs::write(root.join("static/favicon.ico"), b"x").unwrap();
+        fs::write(img_dir.join("hero.jpg"), b"x").unwrap();
+        fs::write(img_dir.join(".DS_Store"), b"junk").unwrap();
+        let items = list_static(&root).unwrap();
+        let names: Vec<_> = items.iter().map(|a| a.name.clone()).collect();
+        // Order is by id (forward-slash site-relative).
+        assert_eq!(names, vec!["favicon.ico".to_string(), "hero.jpg".to_string()]);
+        let hero = items.iter().find(|a| a.name == "hero.jpg").unwrap();
+        assert_eq!(hero.relative_link, "/img/posts/hero.jpg");
+        assert_eq!(hero.context_label, "static/img/posts/");
+        let fav = items.iter().find(|a| a.name == "favicon.ico").unwrap();
+        assert_eq!(fav.relative_link, "/favicon.ico");
+        assert_eq!(fav.context_label, "static/");
+    }
+
+    #[test]
+    fn list_static_returns_empty_when_directory_missing() {
+        let (_t, root) = site();
+        let items = list_static(&root).unwrap();
+        assert!(items.is_empty());
+    }
+
+    #[test]
+    fn list_assets_uses_pipeable_relative_path() {
+        let (_t, root) = site();
+        let dir = root.join("assets/scss");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("main.scss"), b"$x: 1;").unwrap();
+        let items = list_assets(&root).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].relative_link, "scss/main.scss");
     }
 
     #[test]
