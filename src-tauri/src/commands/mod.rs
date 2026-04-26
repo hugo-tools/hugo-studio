@@ -2,6 +2,7 @@ pub mod app;
 pub mod assets;
 pub mod config;
 pub mod content;
+pub mod data;
 pub mod git;
 pub mod health_check;
 pub mod preview;

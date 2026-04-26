@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { describeError, tauri, type Site } from "@/lib/tauri";
 import { useWorkspaceStore } from "@/store/workspace";
 import { ContentTree } from "@/features/content-tree/ContentTree";
+import { DataLibrary } from "@/features/data/DataLibrary";
 import { EditorView } from "@/features/editor/EditorView";
 import { GitPanel } from "@/features/git/GitPanel";
 import { MediaLibrary } from "@/features/media/MediaLibrary";
@@ -126,6 +127,7 @@ export function SiteShell({ site }: Props) {
                   <TabsTrigger value="theme">Theme</TabsTrigger>
                   <TabsTrigger value="media">Media</TabsTrigger>
                   <TabsTrigger value="menus">Menus</TabsTrigger>
+                  <TabsTrigger value="data">Data</TabsTrigger>
                   <TabsTrigger value="git">Git</TabsTrigger>
                 </TabsList>
               </div>
@@ -146,6 +148,12 @@ export function SiteShell({ site }: Props) {
                 className="mt-0 flex flex-1 flex-col overflow-hidden"
               >
                 <MenuEditor site={site} />
+              </TabsContent>
+              <TabsContent
+                value="data"
+                className="mt-0 flex flex-1 flex-col overflow-hidden"
+              >
+                <DataLibrary site={site} />
               </TabsContent>
               <TabsContent value="git" className="mt-0 flex-1 overflow-auto">
                 <GitPanel site={site} />

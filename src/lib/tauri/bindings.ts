@@ -133,6 +133,46 @@ async contentSave(siteId: SiteId, path: string, frontMatter: JsonValue, body: st
     else return { status: "error", error: e  as any };
 }
 },
+async dataCreate(siteId: SiteId, relPath: string) : Promise<Result<DataFile, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("data_create", { siteId, relPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async dataDelete(siteId: SiteId, relPath: string) : Promise<Result<null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("data_delete", { siteId, relPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async dataList(siteId: SiteId) : Promise<Result<DataFile[], AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("data_list", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async dataRead(siteId: SiteId, relPath: string) : Promise<Result<DataFileContent, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("data_read", { siteId, relPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async dataWrite(siteId: SiteId, relPath: string, text: string) : Promise<Result<DataFileContent, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("data_write", { siteId, relPath, text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async gitBranchCreate(siteId: SiteId, name: string, checkoutAfter: boolean) : Promise<Result<GitStatus, AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("git_branch_create", { siteId, name, checkoutAfter }) };
@@ -504,6 +544,36 @@ path: string;
  * Site-relative content id (`posts/hello.md` or `posts/hello/`).
  */
 id: string; kind: ContentKind; language: string | null; archetypeUsed: string }
+export type DataFile = { 
+/**
+ * Stable id: site-relative path with forward slashes.
+ */
+id: string; 
+/**
+ * File name including extension.
+ */
+name: string; 
+/**
+ * Path under `data/` (forward slashes), without the `data/`
+ * prefix — useful for grouping in the UI sidebar.
+ */
+relPath: string; 
+/**
+ * Absolute path on disk.
+ */
+path: string; format: DataFormat; size: number }
+export type DataFileContent = { format: DataFormat; 
+/**
+ * Raw UTF-8 contents — the frontend parses CSV / JSON itself so
+ * the editor stays in charge of representation (and so we don't
+ * have to round-trip a structured form back through serde).
+ */
+text: string }
+/**
+ * Coarse classification of a data file based on extension. The
+ * frontend uses this to choose the editor (grid vs source).
+ */
+export type DataFormat = "csv" | "json" | "yaml" | "toml" | "other"
 export type DetectionInfo = { kind: HugoConfigKind; 
 /**
  * Absolute path to the discovered file (single-file kinds) or to the

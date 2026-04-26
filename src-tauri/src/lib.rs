@@ -7,6 +7,7 @@ pub mod assets;
 pub mod commands;
 pub mod config;
 pub mod content;
+pub mod data;
 pub mod domain;
 pub mod error;
 pub mod git;
@@ -43,6 +44,11 @@ pub fn make_specta_builder() -> Builder<tauri::Wry> {
         commands::content::content_get,
         commands::content::content_list,
         commands::content::content_save,
+        commands::data::data_create,
+        commands::data::data_delete,
+        commands::data::data_list,
+        commands::data::data_read,
+        commands::data::data_write,
         commands::git::git_branch_create,
         commands::git::git_branches,
         commands::git::git_checkout,

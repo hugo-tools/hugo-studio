@@ -9,11 +9,12 @@ import {
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown } from "@codemirror/lang-markdown";
 import { html } from "@codemirror/lang-html";
+import { json } from "@codemirror/lang-json";
 import { EditorView } from "@codemirror/view";
 
 import { useThemeStore } from "@/store/theme";
 
-export type BodyLanguage = "markdown" | "html";
+export type BodyLanguage = "markdown" | "html" | "json";
 
 interface Props {
   value: string;
@@ -122,7 +123,12 @@ export const BodyEditor = forwardRef<BodyEditorHandle, Props>(
     );
 
     const extensions = useMemo(() => {
-      const lang = language === "html" ? html() : markdown();
+      const lang =
+        language === "html"
+          ? html()
+          : language === "json"
+            ? json()
+            : markdown();
       return [lang, EditorView.lineWrapping, buildAppTheme(isDark)];
     }, [isDark, language]);
 

@@ -17,6 +17,8 @@ import type {
   ContentScanResult,
   CreateOptions,
   CreatedContent,
+  DataFile,
+  DataFileContent,
   DetectionInfo,
   GitBranch,
   GitStatus,
@@ -97,6 +99,20 @@ export const tauri = {
     unwrap(commands.assetListAssets(siteId)),
   assetDelete: (siteId: SiteId, assetId: string): Promise<null> =>
     unwrap(commands.assetDelete(siteId, assetId)),
+  dataList: (siteId: SiteId): Promise<DataFile[]> =>
+    unwrap(commands.dataList(siteId)),
+  dataRead: (siteId: SiteId, relPath: string): Promise<DataFileContent> =>
+    unwrap(commands.dataRead(siteId, relPath)),
+  dataWrite: (
+    siteId: SiteId,
+    relPath: string,
+    text: string,
+  ): Promise<DataFileContent> =>
+    unwrap(commands.dataWrite(siteId, relPath, text)),
+  dataCreate: (siteId: SiteId, relPath: string): Promise<DataFile> =>
+    unwrap(commands.dataCreate(siteId, relPath)),
+  dataDelete: (siteId: SiteId, relPath: string): Promise<null> =>
+    unwrap(commands.dataDelete(siteId, relPath)),
   gitStatus: (siteId: SiteId): Promise<GitStatus> =>
     unwrap(commands.gitStatus(siteId)),
   gitClone: (opts: CloneOptions): Promise<CloneResult> =>
