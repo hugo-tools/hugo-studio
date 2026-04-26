@@ -17,12 +17,15 @@ import {
   type Site,
 } from "@/lib/tauri";
 import { useWorkspaceStore, type EditorSelection } from "@/store/workspace";
+import { tryDispatchDrop } from "@/lib/dnd/regions";
 import { AssetImportDialog } from "@/features/assets/AssetImportDialog";
 import { BundleAssetsPanel } from "@/features/assets/BundleAssetsPanel";
 import { MediaPickerDialog } from "@/features/media/MediaPickerDialog";
 import { FrontMatterForm } from "./FrontMatterForm";
 import { BodyEditor, type BodyEditorHandle } from "./BodyEditor";
 import { RichEditor } from "./RichEditor";
+
+type BodyFormat = ContentEditPayload["bodyFormat"];
 
 interface Props {
   site: Site;
@@ -72,6 +75,14 @@ export function EditorView({ site, selection }: Props) {
       .onDragDropEvent((event) => {
         if (event.payload.type !== "drop") return;
         if (!event.payload.paths.length) return;
+        // Let registered regions (e.g. the Media library / picker) claim
+        // the drop first based on cursor coordinates. Only fall back to
+        // the import dialog when nothing more specific applies.
+        if (
+          tryDispatchDrop(event.payload.position, event.payload.paths.slice())
+        ) {
+          return;
+        }
         setPendingFiles(event.payload.paths.slice());
         setDialogOpen(true);
       })
@@ -100,7 +111,10 @@ export function EditorView({ site, selection }: Props) {
     onSuccess: (refs) => {
       setDialogOpen(false);
       setPendingFiles([]);
-      for (const a of refs) editorRef.current?.insertAtCursor(linkFor(a));
+      for (const a of refs)
+        editorRef.current?.insertAtCursor(
+          linkFor(a, doc.data?.bodyFormat ?? "markdown"),
+        );
       queryClient.invalidateQueries({
         queryKey: ["assets", site.id, bundleContentId],
       });
@@ -144,6 +158,8 @@ export function EditorView({ site, selection }: Props) {
     ? "lg:grid-cols-[minmax(0,1fr)_220px]"
     : "lg:grid-cols-1";
 
+  const bodyFormat = doc.data.bodyFormat;
+  const isHtml = bodyFormat === "html";
   const titleValue = (fm.title as string | undefined) ?? "";
 
   return (
@@ -154,7 +170,8 @@ export function EditorView({ site, selection }: Props) {
             className="truncate font-mono text-xs text-muted-foreground"
             title={doc.data.path}
           >
-            {doc.data.path} · {doc.data.format.toUpperCase()} front-matter
+            {doc.data.path} · {doc.data.format.toUpperCase()} front-matter ·{" "}
+            {isHtml ? "HTML" : "Markdown"} body
           </p>
           <div className="flex items-center gap-3">
             {savedFlash && (
@@ -221,7 +238,7 @@ export function EditorView({ site, selection }: Props) {
             <TabsList>
               <TabsTrigger value="frontmatter">Front matter</TabsTrigger>
               <TabsTrigger value="body">Body</TabsTrigger>
-              <TabsTrigger value="rich">Rich</TabsTrigger>
+              {!isHtml && <TabsTrigger value="rich">Rich</TabsTrigger>}
             </TabsList>
           </div>
           <TabsContent
@@ -238,34 +255,43 @@ export function EditorView({ site, selection }: Props) {
             value="body"
             className="mt-0 flex h-full flex-1 flex-col overflow-hidden"
           >
-            <BodyEditor ref={editorRef} value={body} onChange={setBody} />
+            <BodyEditor
+              ref={editorRef}
+              value={body}
+              onChange={setBody}
+              language={isHtml ? "html" : "markdown"}
+            />
           </TabsContent>
-          <TabsContent
-            value="rich"
-            className="mt-0 flex h-full flex-1 flex-col overflow-hidden"
-          >
-            <div className="border-b bg-muted/30 px-4 py-1.5 text-[10px] text-muted-foreground">
-              Visual editor (Milkdown). Hugo shortcodes pass through as raw
-              text. Switching back to Body may canonicalise the markdown (e.g.
-              `*foo*` ↔ `_foo_`).
-            </div>
-            {/* Re-mount whenever the loaded document path changes so a
-                fresh body string seeds the editor. While the user stays
-                on this content, Crepe owns the in-flight state. */}
-            <div className="flex-1 overflow-hidden">
-              <RichEditor
-                key={selection.path}
-                value={body}
-                onChange={setBody}
-              />
-            </div>
-          </TabsContent>
+          {!isHtml && (
+            <TabsContent
+              value="rich"
+              className="mt-0 flex h-full flex-1 flex-col overflow-hidden"
+            >
+              <div className="border-b bg-muted/30 px-4 py-1.5 text-[10px] text-muted-foreground">
+                Visual editor (Milkdown). Hugo shortcodes pass through as raw
+                text. Switching back to Body may canonicalise the markdown (e.g.
+                `*foo*` ↔ `_foo_`).
+              </div>
+              {/* Re-mount whenever the loaded document path changes so a
+                  fresh body string seeds the editor. While the user stays
+                  on this content, Crepe owns the in-flight state. */}
+              <div className="flex-1 overflow-hidden">
+                <RichEditor
+                  key={selection.path}
+                  value={body}
+                  onChange={setBody}
+                />
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
         {showAssets && (
           <BundleAssetsPanel
             siteId={site.id}
             contentId={bundleContentId}
-            onInsertLink={(a) => editorRef.current?.insertAtCursor(linkFor(a))}
+            onInsertLink={(a) =>
+              editorRef.current?.insertAtCursor(linkFor(a, bodyFormat))
+            }
           />
         )}
       </div>
@@ -288,16 +314,32 @@ export function EditorView({ site, selection }: Props) {
         site={site}
         bundleContentId={bundleContentId}
         bundleLabel={bundleLabel}
-        onSelect={(a) => editorRef.current?.insertAtCursor(linkFor(a))}
+        onSelect={(a) =>
+          editorRef.current?.insertAtCursor(linkFor(a, bodyFormat))
+        }
       />
     </div>
   );
 }
 
-function linkFor(asset: AssetRef): string {
+function linkFor(asset: AssetRef, format: BodyFormat): string {
   const altSuggestion = asset.name.replace(/\.[^.]+$/, "");
+  if (format === "html") {
+    if (asset.kind === "image") {
+      return `<img src="${asset.relativeLink}" alt="${escapeAttr(altSuggestion)}" />`;
+    }
+    return `<a href="${asset.relativeLink}">${escapeText(altSuggestion)}</a>`;
+  }
   if (asset.kind === "image") {
     return `![${altSuggestion}](${asset.relativeLink})`;
   }
   return `[${altSuggestion}](${asset.relativeLink})`;
+}
+
+function escapeAttr(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
+function escapeText(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

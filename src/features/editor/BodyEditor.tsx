@@ -8,13 +8,17 @@ import {
 } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown } from "@codemirror/lang-markdown";
+import { html } from "@codemirror/lang-html";
 import { EditorView } from "@codemirror/view";
 
 import { useThemeStore } from "@/store/theme";
 
+export type BodyLanguage = "markdown" | "html";
+
 interface Props {
   value: string;
   onChange: (next: string) => void;
+  language?: BodyLanguage;
 }
 
 export interface BodyEditorHandle {
@@ -96,7 +100,7 @@ function buildAppTheme(dark: boolean) {
 }
 
 export const BodyEditor = forwardRef<BodyEditorHandle, Props>(
-  function BodyEditor({ value, onChange }, ref) {
+  function BodyEditor({ value, onChange, language = "markdown" }, ref) {
     const viewRef = useRef<EditorView | null>(null);
     const isDark = useEffectiveDark();
 
@@ -117,10 +121,10 @@ export const BodyEditor = forwardRef<BodyEditorHandle, Props>(
       [],
     );
 
-    const extensions = useMemo(
-      () => [markdown(), EditorView.lineWrapping, buildAppTheme(isDark)],
-      [isDark],
-    );
+    const extensions = useMemo(() => {
+      const lang = language === "html" ? html() : markdown();
+      return [lang, EditorView.lineWrapping, buildAppTheme(isDark)];
+    }, [isDark, language]);
 
     return (
       <CodeMirror

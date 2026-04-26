@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { open as openFile } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc } from "@tauri-apps/api/core";
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { rectMatcher, registerDropRegion } from "@/lib/dnd/regions";
 import {
   describeError,
   tauri,
@@ -41,6 +42,9 @@ interface Props {
   /** When set, each media card gets a primary "Insert" action that
    *  invokes this callback. Used by the editor's media picker. */
   onSelect?: (asset: AssetRef) => void;
+  /** When mounted inside a modal, set this so the drop region wins over
+   *  panels behind it (default 0). */
+  dropPriority?: number;
 }
 
 export function MediaLibrary({
@@ -49,6 +53,7 @@ export function MediaLibrary({
   bundleLabel,
   initialScope,
   onSelect,
+  dropPriority = 0,
 }: Props) {
   const queryClient = useQueryClient();
 
@@ -58,6 +63,8 @@ export function MediaLibrary({
   );
   const [filter, setFilter] = useState("");
   const [staticSubpath, setStaticSubpath] = useState("img");
+  const [dropFlash, setDropFlash] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const queryKey = useMemo(
     () => [
@@ -84,7 +91,10 @@ export function MediaLibrary({
     enabled: scope !== "bundle" || !!bundleContentId,
   });
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey });
+  const refresh = useCallback(
+    () => queryClient.invalidateQueries({ queryKey }),
+    [queryClient, queryKey],
+  );
 
   const importAt = useCallback(
     async (sources: string[]) => {
@@ -98,6 +108,32 @@ export function MediaLibrary({
     },
     [site.id, scope, bundleContentId, staticSubpath],
   );
+
+  // OS drag-drop into the panel: claim the region while mounted; on a
+  // matching drop, import all paths into the current scope and refresh
+  // the listing. The visible flash is a quick visual receipt — Tauri
+  // doesn't surface enter/leave coordinates reliably across platforms,
+  // so we don't try to render a sticky "drop here" overlay.
+  useEffect(() => {
+    return registerDropRegion({
+      priority: dropPriority,
+      match: rectMatcher(() => containerRef.current),
+      handle: async (paths) => {
+        try {
+          const refs = await importAt(paths);
+          if (refs.length) {
+            refresh();
+            setDropFlash(true);
+            setTimeout(() => setDropFlash(false), 600);
+          }
+        } catch (e) {
+          alert(describeError(e));
+        }
+      },
+    });
+    // refresh / importAt are stable per (site, scope, …); re-register on
+    // their identity change so the closure sees current values.
+  }, [importAt, refresh, dropPriority]);
 
   const add = useMutation({
     mutationFn: async () => {
@@ -133,7 +169,13 @@ export function MediaLibrary({
   }, [list.data, filter]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div
+      ref={containerRef}
+      className={cn(
+        "flex h-full flex-col overflow-hidden transition-shadow",
+        dropFlash && "shadow-[inset_0_0_0_3px_hsl(var(--primary))]",
+      )}
+    >
       <div className="flex flex-col gap-2 border-b px-4 py-3">
         <div className="flex items-center justify-between gap-2">
           <Tabs

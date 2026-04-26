@@ -418,6 +418,13 @@ relativeLink: string; kind: AssetKind; size: number;
  * Friendly label for the UI ("posts/hello/", "static/img/", …).
  */
 contextLabel: string }
+/**
+ * Language of the body — drives the editor mode and whether the Rich
+ * (Milkdown) tab applies. Inferred from the file extension by
+ * [`body_format_for_path`]; nothing in the on-disk format determines
+ * it directly.
+ */
+export type BodyFormat = "markdown" | "html"
 export type CloneOptions = { url: string; 
 /**
  * Absolute path of the destination directory. Must NOT exist yet.
@@ -440,7 +447,12 @@ export type ConfigSource = { path: string; format: ConfigFormat;
  * `hugo.{toml,yaml,json}` case).
  */
 mountKey: string | null }
-export type ContentEditPayload = { format: FrontMatterFormat; frontMatter: JsonValue; body: string; schema: FrontMatterSchema; 
+export type ContentEditPayload = { format: FrontMatterFormat; 
+/**
+ * Body language — drives editor mode and whether the WYSIWYG tab
+ * is offered. Inferred from extension, not from on-disk bytes.
+ */
+bodyFormat: BodyFormat; frontMatter: JsonValue; body: string; schema: FrontMatterSchema; 
 /**
  * Absolute path of the file the editor is acting on. Surfaced so the
  * UI can show a "reveal in finder" affordance later.

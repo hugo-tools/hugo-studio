@@ -7,7 +7,7 @@ use tauri::State;
 use crate::config::cascade;
 use crate::content::archetype::{self, Archetype};
 use crate::content::create::{self as create_content, CreateOptions, CreatedContent};
-use crate::content::document::{self, FrontMatterFormat};
+use crate::content::document::{self, BodyFormat, FrontMatterFormat};
 use crate::content::scan::{self, ContentScanResult};
 use crate::content::schema::{infer_section_schema, FrontMatterSchema};
 use crate::domain::ids::SiteId;
@@ -28,6 +28,9 @@ pub fn content_list(state: State<'_, AppState>, site_id: SiteId) -> AppResult<Co
 #[serde(rename_all = "camelCase")]
 pub struct ContentEditPayload {
     pub format: FrontMatterFormat,
+    /// Body language — drives editor mode and whether the WYSIWYG tab
+    /// is offered. Inferred from extension, not from on-disk bytes.
+    pub body_format: BodyFormat,
     pub front_matter: serde_json::Value,
     pub body: String,
     pub schema: FrontMatterSchema,
@@ -50,6 +53,7 @@ pub fn content_get(
     let schema = infer_section_schema(&root.join("content"), section.as_deref())?.schema;
     Ok(ContentEditPayload {
         format: doc.format,
+        body_format: document::body_format_for_path(&abs),
         front_matter: doc.front_matter,
         body: doc.body,
         schema,
@@ -97,6 +101,7 @@ pub fn content_save(
     let schema = infer_section_schema(&root.join("content"), section.as_deref())?.schema;
     Ok(ContentEditPayload {
         format: doc.format,
+        body_format: document::body_format_for_path(&abs),
         front_matter: doc.front_matter,
         body: doc.body,
         schema,

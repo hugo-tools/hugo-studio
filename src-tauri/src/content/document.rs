@@ -21,6 +21,32 @@ pub enum FrontMatterFormat {
     Json,
 }
 
+/// Language of the body — drives the editor mode and whether the Rich
+/// (Milkdown) tab applies. Inferred from the file extension by
+/// [`body_format_for_path`]; nothing in the on-disk format determines
+/// it directly.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum BodyFormat {
+    Markdown,
+    Html,
+}
+
+/// Map a content file path to its body language. `.html` / `.htm` →
+/// HTML, everything else (including `.md` / `.markdown` and the catch-all
+/// "no extension" case) → Markdown.
+pub fn body_format_for_path(path: &Path) -> BodyFormat {
+    match path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(str::to_ascii_lowercase)
+        .as_deref()
+    {
+        Some("html") | Some("htm") => BodyFormat::Html,
+        _ => BodyFormat::Markdown,
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ContentDocument {
@@ -367,6 +393,30 @@ mod tests {
         save(&p, &doc.front_matter, &doc.body).unwrap();
         let after = fs::read_to_string(&p).unwrap();
         assert_eq!(after, src);
+    }
+
+    #[test]
+    fn body_format_picks_html_for_html_extensions_only() {
+        assert_eq!(
+            body_format_for_path(Path::new("page.html")),
+            BodyFormat::Html
+        );
+        assert_eq!(
+            body_format_for_path(Path::new("page.HTM")),
+            BodyFormat::Html
+        );
+        assert_eq!(
+            body_format_for_path(Path::new("post.md")),
+            BodyFormat::Markdown
+        );
+        assert_eq!(
+            body_format_for_path(Path::new("post.markdown")),
+            BodyFormat::Markdown
+        );
+        assert_eq!(
+            body_format_for_path(Path::new("noext")),
+            BodyFormat::Markdown
+        );
     }
 
     #[test]

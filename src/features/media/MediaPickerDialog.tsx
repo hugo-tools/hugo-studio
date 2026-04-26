@@ -40,6 +40,7 @@ export function MediaPickerDialog({
             bundleContentId={bundleContentId}
             bundleLabel={bundleLabel}
             initialScope={bundleContentId ? "bundle" : "static"}
+            dropPriority={10}
             onSelect={(a) => {
               onSelect(a);
               onOpenChange(false);
