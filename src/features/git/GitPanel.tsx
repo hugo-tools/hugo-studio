@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import {
   describeError,
   tauri,
+  type GitBranch as GitBranchInfo,
   type GitChange,
   type GitChangeStatus,
   type GitStatus,
@@ -155,9 +156,15 @@ export function GitPanel({ site }: Props) {
         <div>
           <div className="flex items-center gap-2">
             <GitBranch className="size-4 text-muted-foreground" />
-            <h2 className="text-base font-semibold">
-              {data.branch ?? "(detached HEAD)"}
-            </h2>
+            <BranchPicker
+              site={site}
+              currentBranch={data.branch}
+              onSwitched={() =>
+                queryClient.invalidateQueries({
+                  queryKey: ["git-status", site.id],
+                })
+              }
+            />
             <span className="text-xs text-muted-foreground">↔</span>
             <span className="font-mono text-xs text-muted-foreground">
               {upstream}
@@ -301,6 +308,81 @@ export function GitPanel({ site }: Props) {
         </div>
       </section>
     </div>
+  );
+}
+
+function BranchPicker({
+  site,
+  currentBranch,
+  onSwitched,
+}: {
+  site: Site;
+  currentBranch: string | null;
+  onSwitched: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const branches = useQuery<GitBranchInfo[]>({
+    queryKey: ["git-branches", site.id],
+    queryFn: () => tauri.gitBranches(site.id),
+  });
+
+  const checkout = useMutation({
+    mutationFn: (branch: string) => tauri.gitCheckout(site.id, branch),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["git-branches", site.id] });
+      queryClient.invalidateQueries({ queryKey: ["content", site.id] });
+      onSwitched();
+    },
+    onError: (e) => alert(describeError(e)),
+  });
+
+  const createBranch = useMutation({
+    mutationFn: (name: string) => tauri.gitBranchCreate(site.id, name, true),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["git-branches", site.id] });
+      onSwitched();
+    },
+    onError: (e) => alert(describeError(e)),
+  });
+
+  const SENTINEL_NEW = "__new__";
+
+  function handleChange(value: string) {
+    if (value === SENTINEL_NEW) {
+      const name = prompt(
+        "New branch name (will check out from current HEAD):",
+      );
+      if (!name || !name.trim()) return;
+      createBranch.mutate(name.trim());
+      return;
+    }
+    if (value && value !== currentBranch) {
+      checkout.mutate(value);
+    }
+  }
+
+  const list = branches.data ?? [];
+
+  return (
+    <select
+      value={currentBranch ?? ""}
+      onChange={(e) => handleChange(e.target.value)}
+      disabled={
+        branches.isPending || checkout.isPending || createBranch.isPending
+      }
+      className="rounded-md border bg-background px-2 py-1 text-base font-semibold"
+      title="Switch branch"
+    >
+      {currentBranch == null && <option value="">(detached HEAD)</option>}
+      {list.map((b) => (
+        <option key={b.name} value={b.name}>
+          {b.name}
+          {b.upstream ? ` ↔ ${b.upstream}` : ""}
+        </option>
+      ))}
+      <option disabled>──────────</option>
+      <option value={SENTINEL_NEW}>+ New branch from HEAD…</option>
+    </select>
   );
 }
 

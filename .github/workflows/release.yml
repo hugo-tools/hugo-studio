@@ -68,6 +68,10 @@ jobs:
       - name: Install npm deps
         run: npm ci
 
+      - name: Stage Hugo sidecar binary
+        shell: bash
+        run: scripts/fetch-hugo-sidecar.sh "${{ matrix.rust-target }}"
+
       - name: Resolve tag for release
         id: tag
         shell: bash
@@ -97,24 +101,26 @@ jobs:
           tagName: ${{ steps.tag.outputs.name }}
           releaseName: "Hugo Studio ${{ steps.tag.outputs.name }}"
           releaseBody: |
-            Build automatica.
+            Automated build.
 
-            **Asset prodotti**
-            - macOS: `.dmg` (arm64 e x64) — *ad-hoc signed, non notarizzato*
-            - Linux: AppImage e `.deb`
+            **Bundled assets**
+            - macOS: `.dmg` (arm64 + x64) — *ad-hoc signed, not notarised*
+            - Linux: AppImage + `.deb`
             - Windows: NSIS `.exe`
+            - Hugo extended is bundled as a Tauri sidecar — no separate
+              install needed for the live preview.
 
-            **macOS — primo avvio**
-            Il binario non è notarizzato (serve un Apple Developer ID a pagamento).
-            Al primo lancio macOS dirà *"impossibile aprire perché Apple non può
-            verificarlo"*. Due strade:
-            1. Tasto destro sull'app → `Apri` → conferma nel dialog.
-            2. Da Terminale, dopo aver copiato l'app in `/Applications`:
+            **macOS — first launch**
+            The binary is not notarised (paid Apple Developer ID required).
+            macOS will say *"can't be opened because Apple cannot check it
+            for malicious software"*. Two ways to authorise it:
+            1. Right-click the app in Finder → `Open` → confirm in the dialog.
+            2. From a terminal, after dragging the app to `/Applications`:
                ```
                xattr -dr com.apple.quarantine "/Applications/Hugo Studio.app"
                ```
 
-            Cambiamenti: vedi commit fra il tag precedente e questo.
+            Changes since the previous tag: see the commit history.
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: false

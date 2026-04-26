@@ -18,6 +18,7 @@ import type {
   CreateOptions,
   CreatedContent,
   DetectionInfo,
+  GitBranch,
   GitStatus,
   JsonValue,
   LoadedConfig,
@@ -112,6 +113,16 @@ export const tauri = {
     unwrap(commands.gitStashSave(siteId, message)),
   gitStashPop: (siteId: SiteId): Promise<GitStatus> =>
     unwrap(commands.gitStashPop(siteId)),
+  gitBranches: (siteId: SiteId): Promise<GitBranch[]> =>
+    unwrap(commands.gitBranches(siteId)),
+  gitCheckout: (siteId: SiteId, branch: string): Promise<GitStatus> =>
+    unwrap(commands.gitCheckout(siteId, branch)),
+  gitBranchCreate: (
+    siteId: SiteId,
+    name: string,
+    checkoutAfter: boolean,
+  ): Promise<GitStatus> =>
+    unwrap(commands.gitBranchCreate(siteId, name, checkoutAfter)),
   appSettingsGet: (): Promise<AppSettings> => unwrap(commands.appSettingsGet()),
   appSettingsSave: (next: AppSettings): Promise<AppSettings> =>
     unwrap(commands.appSettingsSave(next)),

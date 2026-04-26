@@ -1,4 +1,4 @@
-.PHONY: image shell dev tauri-dev fe-build cargo-check fmt lint clean reset
+.PHONY: image shell dev tauri-dev fe-build cargo-check fmt lint clean reset hugo-sidecar
 
 # Build the dev image (run once, then on Dockerfile changes).
 image:
@@ -47,3 +47,10 @@ clean:
 # Same as clean but also removes the image — use sparingly.
 reset: clean
 	docker rmi hugo-studio-dev:latest || true
+
+# Stage the Hugo sidecar binary for the local Linux dev build. The dev
+# image already has a system-wide Hugo, so the cargo build has something
+# to bundle even outside CI. Override TARGET to fetch a different triple.
+hugo-sidecar:
+	docker compose run --rm dev bash -lc \
+	  "scripts/fetch-hugo-sidecar.sh $${TARGET:-x86_64-unknown-linux-gnu}"

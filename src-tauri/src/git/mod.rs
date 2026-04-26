@@ -16,8 +16,8 @@
 use std::path::{Path, PathBuf};
 
 use git2::{
-    Cred, CredentialType, FetchOptions, IndexAddOption, PushOptions, RemoteCallbacks, Repository,
-    ResetType, Signature, StashApplyOptions, StashFlags, StatusOptions,
+    BranchType, Cred, CredentialType, FetchOptions, IndexAddOption, PushOptions, RemoteCallbacks,
+    Repository, ResetType, Signature, StashApplyOptions, StashFlags, StatusOptions,
 };
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -447,6 +447,111 @@ pub fn pull(repo_path: &Path, strategy: PullStrategy) -> AppResult<()> {
         "non-fast-forward pull — try Force pull (will reset to upstream and discard local commits)"
             .into(),
     ))
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct GitBranch {
+    pub name: String,
+    pub is_current: bool,
+    /// Tracking branch (e.g. `origin/main`) when configured.
+    pub upstream: Option<String>,
+}
+
+/// Enumerate local branches. Current branch always sorts first.
+pub fn list_branches(repo_path: &Path) -> AppResult<Vec<GitBranch>> {
+    let repo = open(repo_path)?;
+    let head_name = repo
+        .head()
+        .ok()
+        .and_then(|h| h.shorthand().map(String::from));
+    let mut out = Vec::new();
+    for branch_result in repo
+        .branches(Some(BranchType::Local))
+        .map_err(map_git_err)?
+    {
+        let (branch, _) = branch_result.map_err(map_git_err)?;
+        let name = match branch.name().map_err(map_git_err)? {
+            Some(n) if !n.is_empty() => n.to_string(),
+            _ => continue,
+        };
+        let upstream = branch
+            .upstream()
+            .ok()
+            .and_then(|u| u.name().ok().flatten().map(String::from));
+        let is_current = head_name.as_deref() == Some(name.as_str());
+        out.push(GitBranch {
+            name,
+            is_current,
+            upstream,
+        });
+    }
+    out.sort_by(|a, b| {
+        b.is_current
+            .cmp(&a.is_current)
+            .then_with(|| a.name.cmp(&b.name))
+    });
+    Ok(out)
+}
+
+/// Switch HEAD to `branch_name`. Refuses to lose uncommitted edits — the
+/// caller can stash first if they want to keep them.
+pub fn checkout(repo_path: &Path, branch_name: &str) -> AppResult<()> {
+    let repo = open(repo_path)?;
+
+    // Bail early if the working tree or index has changes; otherwise the
+    // checkout could silently overwrite them.
+    let mut opts = StatusOptions::new();
+    opts.include_untracked(false).include_ignored(false);
+    let dirty = repo
+        .statuses(Some(&mut opts))
+        .map_err(map_git_err)?
+        .iter()
+        .any(|e| !e.status().is_empty());
+    if dirty {
+        return Err(AppError::Internal(
+            "working tree has uncommitted changes — commit or stash before switching branch".into(),
+        ));
+    }
+
+    let branch = repo
+        .find_branch(branch_name, BranchType::Local)
+        .map_err(|_| AppError::Internal(format!("branch `{branch_name}` not found")))?;
+    let ref_name = branch
+        .get()
+        .name()
+        .ok_or_else(|| AppError::Internal("branch ref has no name".into()))?
+        .to_string();
+    let target = branch
+        .get()
+        .target()
+        .ok_or_else(|| AppError::Internal("branch has no target oid".into()))?;
+    let object = repo.find_object(target, None).map_err(map_git_err)?;
+    repo.checkout_tree(
+        &object,
+        Some(git2::build::CheckoutBuilder::default().safe()),
+    )
+    .map_err(map_git_err)?;
+    repo.set_head(&ref_name).map_err(map_git_err)
+}
+
+/// Create a new branch pointing at HEAD. When `checkout_after` is true,
+/// the new branch becomes HEAD (no working-tree changes since it's the
+/// same commit).
+pub fn create_branch(repo_path: &Path, name: &str, checkout_after: bool) -> AppResult<()> {
+    let repo = open(repo_path)?;
+    let head_commit = repo
+        .head()
+        .map_err(map_git_err)?
+        .peel_to_commit()
+        .map_err(map_git_err)?;
+    repo.branch(name, &head_commit, false)
+        .map_err(map_git_err)?;
+    if checkout_after {
+        let ref_name = format!("refs/heads/{name}");
+        repo.set_head(&ref_name).map_err(map_git_err)?;
+    }
+    Ok(())
 }
 
 /// Stash both staged and unstaged changes. Returns the stash OID.

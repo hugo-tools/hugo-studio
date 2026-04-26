@@ -4,7 +4,9 @@ use tauri::State;
 
 use crate::domain::ids::SiteId;
 use crate::error::{AppError, AppResult};
-use crate::git::{self, CloneOptions, CloneResult, CommitResult, GitStatus, PullStrategy};
+use crate::git::{
+    self, CloneOptions, CloneResult, CommitResult, GitBranch, GitStatus, PullStrategy,
+};
 use crate::state::AppState;
 
 fn site_root(state: &State<'_, AppState>, site_id: SiteId) -> AppResult<PathBuf> {
@@ -95,6 +97,38 @@ pub fn git_stash_save(
 pub fn git_stash_pop(state: State<'_, AppState>, site_id: SiteId) -> AppResult<GitStatus> {
     let root = site_root(&state, site_id)?;
     git::stash_pop(&root)?;
+    git::status(&root)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn git_branches(state: State<'_, AppState>, site_id: SiteId) -> AppResult<Vec<GitBranch>> {
+    let root = site_root(&state, site_id)?;
+    git::list_branches(&root)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn git_checkout(
+    state: State<'_, AppState>,
+    site_id: SiteId,
+    branch: String,
+) -> AppResult<GitStatus> {
+    let root = site_root(&state, site_id)?;
+    git::checkout(&root, &branch)?;
+    git::status(&root)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn git_branch_create(
+    state: State<'_, AppState>,
+    site_id: SiteId,
+    name: String,
+    checkout_after: bool,
+) -> AppResult<GitStatus> {
+    let root = site_root(&state, site_id)?;
+    git::create_branch(&root, &name, checkout_after)?;
     git::status(&root)
 }
 

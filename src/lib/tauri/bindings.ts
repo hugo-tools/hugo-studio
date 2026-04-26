@@ -117,6 +117,30 @@ async contentSave(siteId: SiteId, path: string, frontMatter: JsonValue, body: st
     else return { status: "error", error: e  as any };
 }
 },
+async gitBranchCreate(siteId: SiteId, name: string, checkoutAfter: boolean) : Promise<Result<GitStatus, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("git_branch_create", { siteId, name, checkoutAfter }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async gitBranches(siteId: SiteId) : Promise<Result<GitBranch[], AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("git_branches", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async gitCheckout(siteId: SiteId, branch: string) : Promise<Result<GitStatus, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("git_checkout", { siteId, branch }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async gitClone(opts: CloneOptions) : Promise<Result<CloneResult, AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("git_clone", { opts }) };
@@ -476,6 +500,11 @@ export type FieldType = "string" | "text" | "number" | "boolean" | "date" | "dat
 "json"
 export type FrontMatterFormat = "toml" | "yaml" | "json"
 export type FrontMatterSchema = { fields: FieldDef[]; unknownFieldsPolicy: UnknownFieldsPolicy }
+export type GitBranch = { name: string; isCurrent: boolean; 
+/**
+ * Tracking branch (e.g. `origin/main`) when configured.
+ */
+upstream: string | null }
 export type GitChange = { path: string; status: GitChangeStatus; 
 /**
  * True when the change is in the index (staged), false when in the

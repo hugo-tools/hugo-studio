@@ -233,7 +233,9 @@ fn spawn_pump<R>(
 /// Find the Hugo binary. Order:
 /// 1. `override_path` (set by the user from the Settings dialog)
 /// 2. `HUGO_STUDIO_HUGO_PATH` env var (absolute path to a binary)
-/// 3. `which hugo` on the user's `PATH`
+/// 3. Bundled Tauri sidecar (production builds shipped by the
+///    `release.yml` workflow include a per-platform `hugo` binary)
+/// 4. `which hugo` on the user's `PATH`
 pub fn locate_hugo(override_path: Option<&str>) -> AppResult<PathBuf> {
     if let Some(p) = override_path.filter(|s| !s.is_empty()) {
         let pb = PathBuf::from(p);
@@ -254,11 +256,52 @@ pub fn locate_hugo(override_path: Option<&str>) -> AppResult<PathBuf> {
             p.display()
         )));
     }
+    if let Some(p) = locate_bundled_hugo() {
+        return Ok(p);
+    }
     which::which("hugo").map_err(|e| {
         AppError::HugoBinary(format!(
             "`hugo` not found on PATH ({e}); install Hugo, set HUGO_STUDIO_HUGO_PATH, or pick a binary from the Settings dialog"
         ))
     })
+}
+
+/// Try the Tauri sidecar bundle locations:
+///   - production: `<resource_dir>/hugo[.exe]` (Tauri renames the
+///     `binaries/hugo-<target>` file at bundle time)
+///   - development: `<cwd>/binaries/hugo-<target>[.exe]` next to
+///     `tauri.conf.json` — populated by CI for releases and skipped
+///     locally (the PATH fallback covers `hugo` already on the host)
+///
+/// `TARGET_TRIPLE` is injected by `build.rs`; the runtime probe uses
+/// it to construct the dev-mode path.
+fn locate_bundled_hugo() -> Option<PathBuf> {
+    let exe_suffix = if cfg!(windows) { ".exe" } else { "" };
+
+    // Production: alongside the executable's resource dir. The current
+    // process's exe lives somewhere like `<bundle>/Contents/MacOS/<name>`
+    // on macOS or `<install>/<name>.exe` on Windows; the sidecar sits in
+    // the same directory.
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            let candidate = dir.join(format!("hugo{exe_suffix}"));
+            if candidate.is_file() {
+                return Some(candidate);
+            }
+        }
+    }
+
+    // Development: <cwd>/binaries/hugo-<target>(.exe). cwd in `tauri
+    // dev` is `src-tauri/`, which matches what the build script sets up.
+    let triple = env!("TARGET_TRIPLE");
+    let dev_candidate = std::env::current_dir()
+        .ok()?
+        .join("binaries")
+        .join(format!("hugo-{triple}{exe_suffix}"));
+    if dev_candidate.is_file() {
+        return Some(dev_candidate);
+    }
+    None
 }
 
 /// Ask the OS for an unused port; bind+drop creates a brief TOCTOU

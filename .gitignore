@@ -29,6 +29,11 @@ src-tauri/target/
 src-tauri/gen/
 src-tauri/Cargo.lock.bak
 
+# Hugo sidecar binaries — downloaded per platform by release.yml /
+# fetch-hugo-sidecar.sh; never committed.
+src-tauri/binaries/
+!src-tauri/binaries/.gitkeep
+
 # Claude Code: harness state per-utente, non condividere
 .claude/settings.local.json
 
