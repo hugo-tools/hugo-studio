@@ -8,4 +8,5 @@ pub mod health_check;
 pub mod preview;
 pub mod site;
 pub mod theme;
+pub mod theme_files;
 pub mod workspace;

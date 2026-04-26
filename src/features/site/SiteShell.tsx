@@ -14,6 +14,7 @@ import { MediaLibrary } from "@/features/media/MediaLibrary";
 import { MenuEditor } from "@/features/menus/MenuEditor";
 import { PreviewPane } from "@/features/preview/PreviewPane";
 import { SiteSettingsPanel } from "@/features/site-settings/SiteSettingsPanel";
+import { ThemeFilesPanel } from "@/features/theme/ThemeFilesPanel";
 import { ThemeSettingsPanel } from "@/features/theme-settings/ThemeSettingsPanel";
 import { ThemeToggle } from "@/features/theme-mode/ThemeToggle";
 
@@ -134,8 +135,33 @@ export function SiteShell({ site }: Props) {
               <TabsContent value="site" className="mt-0 flex-1 overflow-auto">
                 <SiteSettingsPanel site={site} />
               </TabsContent>
-              <TabsContent value="theme" className="mt-0 flex-1 overflow-auto">
-                <ThemeSettingsPanel site={site} />
+              <TabsContent
+                value="theme"
+                className="mt-0 flex flex-1 flex-col overflow-hidden"
+              >
+                <Tabs
+                  defaultValue="params"
+                  className="flex h-full flex-col overflow-hidden"
+                >
+                  <div className="border-b bg-muted/20 px-6 py-1.5">
+                    <TabsList>
+                      <TabsTrigger value="params">Params</TabsTrigger>
+                      <TabsTrigger value="files">Files</TabsTrigger>
+                    </TabsList>
+                  </div>
+                  <TabsContent
+                    value="params"
+                    className="mt-0 flex-1 overflow-auto"
+                  >
+                    <ThemeSettingsPanel site={site} />
+                  </TabsContent>
+                  <TabsContent
+                    value="files"
+                    className="mt-0 flex flex-1 flex-col overflow-hidden"
+                  >
+                    <ThemeFilesPanel site={site} />
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
               <TabsContent
                 value="media"

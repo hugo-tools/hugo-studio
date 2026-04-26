@@ -324,6 +324,30 @@ async themeSaveParams(siteId: SiteId, params: JsonValue) : Promise<Result<ThemeI
     else return { status: "error", error: e  as any };
 }
 },
+async themeFileRead(siteId: SiteId, relPath: string) : Promise<Result<ThemeFileContent, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("theme_file_read", { siteId, relPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async themeFileWrite(siteId: SiteId, relPath: string, text: string) : Promise<Result<ThemeFileContent, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("theme_file_write", { siteId, relPath, text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async themeFilesList(siteId: SiteId) : Promise<Result<ThemeFilesIndex, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("theme_files_list", { siteId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async workspaceActiveSiteId() : Promise<Result<SiteId | null, AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("workspace_active_site_id") };
@@ -702,6 +726,27 @@ export type SiteId = string
  * (config, theme, languages…) is only built when a site is opened.
  */
 export type SiteRef = { id: SiteId; name: string; rootPath: string; lastOpened: string }
+export type ThemeFile = { 
+/**
+ * Path relative to the theme directory, forward slashes. Stable id.
+ */
+relPath: string; name: string; 
+/**
+ * Top-level subdirectory the file lives under (`layouts`, `assets`,
+ * …). Empty string for files at the theme root.
+ */
+category: string; 
+/**
+ * Absolute path on disk.
+ */
+path: string; format: ThemeFileFormat; size: number }
+export type ThemeFileContent = { format: ThemeFileFormat; text: string }
+/**
+ * Coarse classification of a theme file based on extension. The
+ * frontend uses this to choose the editor's language extension.
+ */
+export type ThemeFileFormat = "html" | "css" | "scss" | "js" | "ts" | "json" | "yaml" | "toml" | "markdown" | "other"
+export type ThemeFilesIndex = { themeName: string | null; themePath: string | null; files: ThemeFile[] }
 export type ThemeInfo = { themeName: string | null; themePath: string | null; schema: FrontMatterSchema; source: SchemaSource; params: JsonValue }
 export type UnknownFieldsPolicy = "preserve" | "warn" | "strip"
 

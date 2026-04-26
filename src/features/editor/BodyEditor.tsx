@@ -10,11 +10,20 @@ import CodeMirror from "@uiw/react-codemirror";
 import { markdown } from "@codemirror/lang-markdown";
 import { html } from "@codemirror/lang-html";
 import { json } from "@codemirror/lang-json";
+import { css } from "@codemirror/lang-css";
+import { javascript } from "@codemirror/lang-javascript";
 import { EditorView } from "@codemirror/view";
 
 import { useThemeStore } from "@/store/theme";
 
-export type BodyLanguage = "markdown" | "html" | "json";
+export type BodyLanguage =
+  | "markdown"
+  | "html"
+  | "json"
+  | "css"
+  | "scss"
+  | "javascript"
+  | "typescript";
 
 interface Props {
   value: string;
@@ -128,7 +137,13 @@ export const BodyEditor = forwardRef<BodyEditorHandle, Props>(
           ? html()
           : language === "json"
             ? json()
-            : markdown();
+            : language === "css" || language === "scss"
+              ? css()
+              : language === "javascript"
+                ? javascript()
+                : language === "typescript"
+                  ? javascript({ typescript: true })
+                  : markdown();
       return [lang, EditorView.lineWrapping, buildAppTheme(isDark)];
     }, [isDark, language]);
 

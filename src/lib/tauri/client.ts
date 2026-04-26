@@ -20,6 +20,8 @@ import type {
   DataFile,
   DataFileContent,
   DetectionInfo,
+  ThemeFileContent,
+  ThemeFilesIndex,
   GitBranch,
   GitStatus,
   JsonValue,
@@ -81,6 +83,16 @@ export const tauri = {
     unwrap(commands.themeGet(siteId)),
   themeSaveParams: (siteId: SiteId, params: JsonValue): Promise<ThemeInfo> =>
     unwrap(commands.themeSaveParams(siteId, params)),
+  themeFilesList: (siteId: SiteId): Promise<ThemeFilesIndex> =>
+    unwrap(commands.themeFilesList(siteId)),
+  themeFileRead: (siteId: SiteId, relPath: string): Promise<ThemeFileContent> =>
+    unwrap(commands.themeFileRead(siteId, relPath)),
+  themeFileWrite: (
+    siteId: SiteId,
+    relPath: string,
+    text: string,
+  ): Promise<ThemeFileContent> =>
+    unwrap(commands.themeFileWrite(siteId, relPath, text)),
   previewStart: (siteId: SiteId): Promise<PreviewHandle> =>
     unwrap(commands.previewStart(siteId)),
   previewStop: (): Promise<null> => unwrap(commands.previewStop()),
